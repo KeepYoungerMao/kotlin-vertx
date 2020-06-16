@@ -283,7 +283,10 @@ class DataOperationImpl : DataOperation {
      */
     private fun bookList(ctx: RoutingContext) {
         val sql = sqlBuilder.bookList(ctx.request().params())
-        sqlResult(ctx, sql, single = false, commit = false)
+        if (null == sql)
+            ctx.response().end(ok(emptyList<Any>()))
+        else
+            sqlResult(ctx, sql, single = false, commit = false)
     }
 
     /**
@@ -300,13 +303,54 @@ class DataOperationImpl : DataOperation {
         val sql = sqlBuilder.bookPage(ctx.request().params())
         sqlResult(ctx, sql, single = false, commit = false)
     }
-    private fun bookChapter(ctx: RoutingContext) { ctx.response().end(ok("building...")) }
-    private fun bookChapters(ctx: RoutingContext) { ctx.response().end(ok("building...")) }
-    private fun bookClassify(ctx: RoutingContext) { ctx.response().end(ok("building...")) }
-    private fun saveBook(ctx: RoutingContext) { ctx.response().end(ok("building...")) }
-    private fun saveBooks(ctx: RoutingContext) { ctx.response().end(ok("building...")) }
-    private fun saveBookChapter(ctx: RoutingContext) { ctx.response().end(ok("building...")) }
-    private fun saveBookChapters(ctx: RoutingContext) { ctx.response().end(ok("building...")) }
+
+    /**
+     * 通过id查询古籍章节详情
+     * id错误返回错误信息
+     */
+    private fun bookChapter(ctx: RoutingContext) {
+        val sql = sqlBuilder.bookChapter(ctx.request().getParam("id"))
+        if (null == sql)
+            ctx.response().end(error("invalid param id."))
+        else
+            sqlResult(ctx, sql, single = true, commit = false)
+    }
+
+    /**
+     * 通过古籍id查询该古籍下所有章节列表
+     * 章节列表不包含章节详情内容
+     * 古籍id错误返回错误信息
+     */
+    private fun bookChapters(ctx: RoutingContext) {
+        val sql = sqlBuilder.bookChapters(ctx.request().getParam("id"))
+        if (null == sql)
+            ctx.response().end(error("invalid param id."))
+        else
+            sqlResult(ctx, sql, single = false, commit = false)
+    }
+
+    /**
+     * 返回古籍分类信息
+     */
+    private fun bookClassify(ctx: RoutingContext) {
+        sqlResult(ctx,sqlBuilder.dataDict(DataType.BOOK),single = false,commit = false)
+    }
+    private fun saveBook(ctx: RoutingContext) {
+        println(ctx.bodyAsJson)
+        ctx.response().end("building")
+    }
+    private fun saveBooks(ctx: RoutingContext) {
+        println(ctx.bodyAsJsonArray)
+        ctx.response().end("building")
+    }
+    private fun saveBookChapter(ctx: RoutingContext) {
+        println(ctx.bodyAsJson)
+        ctx.response().end("building")
+    }
+    private fun saveBookChapters(ctx: RoutingContext) {
+        println(ctx.bodyAsJsonArray)
+        ctx.response().end("building")
+    }
     private fun updateBook(ctx: RoutingContext) { ctx.response().end(ok("building...")) }
     private fun updateBooks(ctx: RoutingContext) { ctx.response().end(ok("building...")) }
     private fun updateBookChapter(ctx: RoutingContext) { ctx.response().end(ok("building...")) }

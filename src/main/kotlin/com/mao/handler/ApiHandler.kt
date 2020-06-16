@@ -9,6 +9,7 @@ import io.vertx.core.Vertx
 import io.vertx.core.json.JsonObject
 import io.vertx.ext.jdbc.JDBCClient
 import io.vertx.ext.web.Router
+import io.vertx.ext.web.handler.BodyHandler
 
 /**
  * kotlin + vertX
@@ -16,9 +17,13 @@ import io.vertx.ext.web.Router
  * Calls to static methods in Java interfaces are prohibited in JVM target 1.6. Recompile with '-jvm-target 1.8'
  * file -> setting -> builder -> Compiler -> kotlin Compiler -> Target jvm version = 1.8
  * File -> Project Structure -> Module -> 项目下kotlin -> target platform = 1.8 并且勾选 use project settings
+ *
  * 使用vertx-jdbc-client的问题：
  * 回现：正常请求几次之后，浏览器请求一直pending，不动
  * 原因：当JDBCClient获取SQLConnection后，执行query，并成功返回，如果SQLConnection没有关闭，便不能回收，连接池用完，则会一直pending
+ *
+ * 使用BodyHandler：
+ * BodyHandler默认不会将表单参数合并到body主体中
  */
 class ApiHandler : AbstractVerticle() {
 
@@ -42,7 +47,7 @@ class ApiHandler : AbstractVerticle() {
             it.next()
         }
         router.route("/").handler { it.response().end(Response.ok(server)) }
-        router.route("/api/data/:operation/:data/:method").handler(dataOperation)
+        router.route("/api/data/:operation/:data/:method").handler(BodyHandler.create()).handler(dataOperation)
         router.errorHandler(404, ErrorHandler.created(404))
         router.errorHandler(405, ErrorHandler.created(405))
         router.errorHandler(500, ErrorHandler.created(500))

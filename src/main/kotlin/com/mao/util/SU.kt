@@ -33,4 +33,6 @@ object SU {
         return null != str && str.isNotEmpty()
     }
 
+    fun isEmpty(str: String?) : Boolean = !isNotEmpty(str)
+
 }
