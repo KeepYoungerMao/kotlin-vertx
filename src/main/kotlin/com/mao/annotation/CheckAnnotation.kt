@@ -1,4 +1,13 @@
-package com.mao
+package com.mao.annotation
+
+/**
+ * 是否不为null检验
+ * 用于检验字符串字段不允许为空
+ */
+@Target(AnnotationTarget.FIELD)
+@Retention(AnnotationRetention.RUNTIME)
+@MustBeDocumented
+annotation class NeedNotNull
 
 /**
  * 是否为数字检验
@@ -9,15 +18,6 @@ package com.mao
 @Retention(AnnotationRetention.RUNTIME)
 @MustBeDocumented
 annotation class NeedNumber
-
-/**
- * 是否不为null检验
- * 用于检验字符串字段不允许为空
- */
-@Target(AnnotationTarget.FIELD)
-@Retention(AnnotationRetention.RUNTIME)
-@MustBeDocumented
-annotation class NeedNotNull
 
 /**
  * 用于VARCHAR字段检验

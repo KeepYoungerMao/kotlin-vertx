@@ -1,7 +1,11 @@
-package com.mao
+package com.mao.service
 
-import com.mao.Response.notAllowed
-import com.mao.Response.ok
+import com.mao.sql.Query
+import com.mao.data.Response
+import com.mao.enum.DataMethod
+import com.mao.enum.DataType
+import com.mao.enum.OperationType
+import com.mao.enum.EnumOperation
 import io.vertx.core.Handler
 import io.vertx.ext.web.RoutingContext
 
@@ -11,22 +15,21 @@ interface DataOperation : Handler<RoutingContext> {
         fun created() : DataOperation = DataOperationImpl()
     }
 
-    override fun handle(ctx: RoutingContext)
-
 }
 
 class DataOperationImpl : DataOperation {
 
     private val queryHandler: Query = Query()
+    private val sqlBuilder: SqlBuilder = SqlBuilder()
 
     override fun handle(ctx: RoutingContext) {
         val operation = ctx.pathParam("operation")
         val data = ctx.pathParam("data")
         val method = ctx.pathParam("method")
-        val operationEnum = TypeOperation.operationType(operation)
-        val dataEnum = TypeOperation.dataType(data)
-        val methodEnum = TypeOperation.dataMethod(method)
-        if (TypeOperation.canRequest(operationEnum,ctx.request().method())) {
+        val operationEnum = EnumOperation.operationType(operation)
+        val dataEnum = EnumOperation.dataType(data)
+        val methodEnum = EnumOperation.dataMethod(method)
+        if (EnumOperation.canRequest(operationEnum,ctx.request().method())) {
             when (dataEnum) {
                 DataType.BOOK -> {
                     when (operationEnum) {
@@ -38,7 +41,7 @@ class DataOperationImpl : DataOperation {
                                 DataMethod.CHAPTER -> bookChapter(ctx)
                                 DataMethod.CHAPTERS -> bookChapters(ctx)
                                 DataMethod.CLASSIFY -> bookClassify(ctx)
-                                else -> ctx.response().end(notAllowed("not support data method $method"))
+                                else -> ctx.response().end(methodError(method))
                             }
                         }
                         OperationType.SAVE -> {
@@ -47,7 +50,7 @@ class DataOperationImpl : DataOperation {
                                 DataMethod.LIST -> saveBooks(ctx)
                                 DataMethod.CHAPTER -> saveBookChapter(ctx)
                                 DataMethod.CHAPTERS -> saveBookChapters(ctx)
-                                else -> ctx.response().end(notAllowed("not support data method $method"))
+                                else -> ctx.response().end(methodError(method))
                             }
                         }
                         OperationType.EDIT -> {
@@ -56,7 +59,7 @@ class DataOperationImpl : DataOperation {
                                 DataMethod.LIST -> updateBooks(ctx)
                                 DataMethod.CHAPTER -> updateBookChapter(ctx)
                                 DataMethod.CHAPTERS -> updateBookChapters(ctx)
-                                else -> ctx.response().end(notAllowed("not support data method $method"))
+                                else -> ctx.response().end(methodError(method))
                             }
                         }
                         OperationType.REMOVE -> {
@@ -65,10 +68,10 @@ class DataOperationImpl : DataOperation {
                                 DataMethod.LIST -> deleteBooks(ctx)
                                 DataMethod.CHAPTER -> deleteBookChapter(ctx)
                                 DataMethod.CHAPTERS -> deleteBookChapters(ctx)
-                                else -> ctx.response().end(notAllowed("not support data method $method"))
+                                else -> ctx.response().end(methodError(method))
                             }
                         }
-                        else -> ctx.response().end(notAllowed("request method not allowed."))
+                        else -> ctx.response().end(operationError(operation))
                     }
                 }
                 DataType.BJX -> {
@@ -78,31 +81,31 @@ class DataOperationImpl : DataOperation {
                                 DataMethod.SRC -> bjxSrc(ctx)
                                 DataMethod.LIST -> bjxList(ctx)
                                 DataMethod.PAGE -> bjxPage(ctx)
-                                else -> ctx.response().end(notAllowed("not support data method $method"))
+                                else -> ctx.response().end(methodError(method))
                             }
                         }
                         OperationType.SAVE -> {
                             when (methodEnum) {
                                 DataMethod.SRC -> saveBjx(ctx)
                                 DataMethod.LIST -> saveBjxS(ctx)
-                                else -> ctx.response().end(notAllowed("not support data method $method"))
+                                else -> ctx.response().end(methodError(method))
                             }
                         }
                         OperationType.EDIT -> {
                             when (methodEnum) {
                                 DataMethod.SRC -> updateBjx(ctx)
                                 DataMethod.LIST -> updateBjxS(ctx)
-                                else -> ctx.response().end(notAllowed("not support data method $method"))
+                                else -> ctx.response().end(methodError(method))
                             }
                         }
                         OperationType.REMOVE -> {
                             when (methodEnum) {
                                 DataMethod.SRC -> deleteBjx(ctx)
                                 DataMethod.LIST -> deleteBjxS(ctx)
-                                else -> ctx.response().end(notAllowed("not support data method $method"))
+                                else -> ctx.response().end(methodError(method))
                             }
                         }
-                        else -> ctx.response().end(notAllowed("request method not allowed."))
+                        else -> ctx.response().end(operationError(operation))
                     }
                 }
                 DataType.BUDDHIST -> {
@@ -115,7 +118,7 @@ class DataOperationImpl : DataOperation {
                                 DataMethod.CHAPTER -> buddhistChapter(ctx)
                                 DataMethod.CHAPTERS -> buddhistChapters(ctx)
                                 DataMethod.CLASSIFY -> buddhistClassify(ctx)
-                                else -> ctx.response().end(notAllowed("request method not allowed."))
+                                else -> ctx.response().end(methodError(method))
                             }
                         }
                         OperationType.SAVE -> {
@@ -124,7 +127,7 @@ class DataOperationImpl : DataOperation {
                                 DataMethod.LIST -> saveBuddhists(ctx)
                                 DataMethod.CHAPTER -> saveBuddhistChapter(ctx)
                                 DataMethod.CHAPTERS -> saveBuddhistChapters(ctx)
-                                else -> ctx.response().end(notAllowed("request method not allowed."))
+                                else -> ctx.response().end(methodError(method))
                             }
                         }
                         OperationType.EDIT -> {
@@ -133,7 +136,7 @@ class DataOperationImpl : DataOperation {
                                 DataMethod.LIST -> updateBuddhists(ctx)
                                 DataMethod.CHAPTER -> updateBuddhistChapter(ctx)
                                 DataMethod.CHAPTERS -> updateBuddhistChapters(ctx)
-                                else -> ctx.response().end(notAllowed("request method not allowed."))
+                                else -> ctx.response().end(methodError(method))
                             }
                         }
                         OperationType.REMOVE -> {
@@ -142,10 +145,10 @@ class DataOperationImpl : DataOperation {
                                 DataMethod.LIST -> deleteBuddhists(ctx)
                                 DataMethod.CHAPTER -> deleteBuddhistChapter(ctx)
                                 DataMethod.CHAPTERS -> deleteBuddhistChapters(ctx)
-                                else -> ctx.response().end(notAllowed("request method not allowed."))
+                                else -> ctx.response().end(methodError(method))
                             }
                         }
-                        else -> ctx.response().end(notAllowed("request method not allowed."))
+                        else -> ctx.response().end(operationError(operation))
                     }
                 }
                 DataType.LIVE -> {
@@ -156,31 +159,31 @@ class DataOperationImpl : DataOperation {
                                 DataMethod.LIST -> liveList(ctx)
                                 DataMethod.PAGE -> livePage(ctx)
                                 DataMethod.CLASSIFY -> liveClassify(ctx)
-                                else -> ctx.response().end(notAllowed("request method not allowed."))
+                                else -> ctx.response().end(methodError(method))
                             }
                         }
                         OperationType.SAVE -> {
                             when (methodEnum) {
                                 DataMethod.SRC -> saveLive(ctx)
                                 DataMethod.LIST -> saveLives(ctx)
-                                else -> ctx.response().end(notAllowed("request method not allowed."))
+                                else -> ctx.response().end(methodError(method))
                             }
                         }
                         OperationType.EDIT -> {
                             when (methodEnum) {
                                 DataMethod.SRC -> updateLive(ctx)
                                 DataMethod.LIST -> updateLives(ctx)
-                                else -> ctx.response().end(notAllowed("request method not allowed."))
+                                else -> ctx.response().end(methodError(method))
                             }
                         }
                         OperationType.REMOVE -> {
                             when (methodEnum) {
                                 DataMethod.SRC -> deleteLive(ctx)
                                 DataMethod.LIST -> deleteLives(ctx)
-                                else -> ctx.response().end(notAllowed("request method not allowed."))
+                                else -> ctx.response().end(methodError(method))
                             }
                         }
-                        else -> ctx.response().end(notAllowed("request method not allowed."))
+                        else -> ctx.response().end(operationError(operation))
                     }
                 }
                 DataType.MOVIE -> {
@@ -191,31 +194,31 @@ class DataOperationImpl : DataOperation {
                                 DataMethod.LIST -> movieList(ctx)
                                 DataMethod.PAGE -> moviePage(ctx)
                                 DataMethod.CLASSIFY -> movieClassify(ctx)
-                                else -> ctx.response().end(notAllowed("request method not allowed."))
+                                else -> ctx.response().end(methodError(method))
                             }
                         }
                         OperationType.SAVE -> {
                             when (methodEnum) {
                                 DataMethod.SRC -> saveMovie(ctx)
                                 DataMethod.LIST -> saveMovies(ctx)
-                                else -> ctx.response().end(notAllowed("request method not allowed."))
+                                else -> ctx.response().end(methodError(method))
                             }
                         }
                         OperationType.EDIT -> {
                             when (methodEnum) {
                                 DataMethod.SRC -> updateMovie(ctx)
                                 DataMethod.LIST -> updateMovies(ctx)
-                                else -> ctx.response().end(notAllowed("request method not allowed."))
+                                else -> ctx.response().end(methodError(method))
                             }
                         }
                         OperationType.REMOVE -> {
                             when (methodEnum) {
                                 DataMethod.SRC -> deleteMovie(ctx)
                                 DataMethod.LIST -> deleteMovies(ctx)
-                                else -> ctx.response().end(notAllowed("request method not allowed."))
+                                else -> ctx.response().end(methodError(method))
                             }
                         }
-                        else -> ctx.response().end(notAllowed("request method not allowed."))
+                        else -> ctx.response().end(operationError(operation))
                     }
                 }
                 DataType.PIC -> {
@@ -226,57 +229,77 @@ class DataOperationImpl : DataOperation {
                                 DataMethod.LIST -> picList(ctx)
                                 DataMethod.PAGE -> picPage(ctx)
                                 DataMethod.CLASSIFY -> picClassify(ctx)
-                                else -> ctx.response().end(notAllowed("request method not allowed."))
+                                else -> ctx.response().end(methodError(method))
                             }
                         }
                         OperationType.SAVE -> {
                             when (methodEnum) {
                                 DataMethod.SRC -> savePic(ctx)
                                 DataMethod.LIST -> savePics(ctx)
-                                else -> ctx.response().end(notAllowed("request method not allowed."))
+                                else -> ctx.response().end(methodError(method))
                             }
                         }
                         OperationType.EDIT -> {
                             when (methodEnum) {
                                 DataMethod.SRC -> updatePic(ctx)
                                 DataMethod.LIST -> updatePics(ctx)
-                                else -> ctx.response().end(notAllowed("request method not allowed."))
+                                else -> ctx.response().end(methodError(method))
                             }
                         }
                         OperationType.REMOVE -> {
                             when (methodEnum) {
                                 DataMethod.SRC -> deletePic(ctx)
                                 DataMethod.LIST -> deletePics(ctx)
-                                else -> ctx.response().end(notAllowed("request method not allowed."))
+                                else -> ctx.response().end(methodError(method))
                             }
                         }
-                        else -> ctx.response().end(notAllowed("request method not allowed."))
+                        else -> ctx.response().end(operationError(operation))
                     }
                 }
-                else -> ctx.response().end(notAllowed("not support data type $data"))
+                else -> ctx.response().end(dataError(data))
             }
         } else {
-            ctx.response().end(notAllowed("request method not allowed."))
+            ctx.response().end(requestError(ctx.request().method().name))
         }
     }
 
+    /**
+     * 通过古籍id查询古籍详情
+     */
     private fun bookSrc(ctx: RoutingContext) {
-        val id = ctx.request().getParam("id")?.toLong()?:-1
-        if (id <= 0)
-            ctx.response().end(Response.error("invalid param id."))
+        val sql = sqlBuilder.bookSrc(ctx.request().getParam("id"))
+        if (sql == null)
+            ctx.response().end(error("invalid param id."))
         else {
-            val query = "SELECT * FROM tt_book2 WHERE id = $id"
-            queryHandler.execute(query, single = true, commit = false, handler = Handler { res -> kotlin.run {
-                if (res.succeeded()) {
-                    ctx.response().end(res.result())
-                } else {
-                    ctx.response().end(Response.error("query database error."))
-                }
-            } })
+            sqlResult(ctx, sql, single = true, commit = false)
         }
     }
-    private fun bookList(ctx: RoutingContext) { ctx.response().end(ok("building...")) }
-    private fun bookPage(ctx: RoutingContext) { ctx.response().end(ok("building...")) }
+
+    /**
+     * 查询古籍列表，搜索查询
+     * 支持参数：
+     * name：古籍名称
+     * auth：古籍作者
+     */
+    private fun bookList(ctx: RoutingContext) {
+        val sql = sqlBuilder.bookList(ctx.request().params())
+        sqlResult(ctx, sql, single = false, commit = false)
+    }
+
+    /**
+     * 查询古籍列表，分类查询，分页查询
+     * 支持参数：
+     * page：页码
+     * row：每页数量
+     * type：估计类型
+     * dynasty：古籍朝代
+     * free：是否免费
+     * off_sale：是否下架
+     */
+    private fun bookPage(ctx: RoutingContext) {
+        val sql = sqlBuilder.bookPage(ctx.request().params())
+        sqlResult(ctx, sql, single = false, commit = false)
+    }
     private fun bookChapter(ctx: RoutingContext) { ctx.response().end(ok("building...")) }
     private fun bookChapters(ctx: RoutingContext) { ctx.response().end(ok("building...")) }
     private fun bookClassify(ctx: RoutingContext) { ctx.response().end(ok("building...")) }
@@ -353,6 +376,36 @@ class DataOperationImpl : DataOperation {
     private fun updatePic(ctx: RoutingContext) { ctx.response().end(ok("building...")) }
     private fun updatePics(ctx: RoutingContext) { ctx.response().end(ok("building...")) }
     private fun deletePic(ctx: RoutingContext) { ctx.response().end(ok("building...")) }
-    private fun deletePics(ctx: RoutingContext) { ctx.response().end(ok("building...")) }
+    private fun deletePics(ctx: RoutingContext) { ctx.response().end(ok("building....")) }
+
+    /**
+     * 同一执行sql语句，并操作RoutingContext返回数据
+     * 执行sql语句也是同一调用execute方法
+     * @param ctx RoutingContext上下文
+     * @param sql 执行的SQL语句
+     * @param single 在SQL语句为查询类语句时使用，为true时表示只查询一条记录，false表示查询多条记录
+     * @param commit 是否需要提交，需要提交的表示为更新、保存、删除类型SQL语句
+     */
+    private fun sqlResult(ctx: RoutingContext, sql: String, single: Boolean, commit: Boolean) {
+        queryHandler.execute(sql,single,commit,handler = Handler { res -> kotlin.run {
+            if (res.succeeded()) {
+                ctx.response().end(res.result())
+            } else {
+                ctx.response().end(error("query database error."))
+            }
+        } })
+    }
+
+    private fun operationError(operation: String) : String = err("p1",operation)
+    private fun dataError(data: String) : String = err("p2",data)
+    private fun methodError(method: String) : String = err("p3",method)
+    private fun err(p: String, name: String) : String {
+        return Response.notAllowed("request data not allowed. request path: /api/data/{p1}/{p2}/{p3}, the param[$p] which you send[$name] is not supported.")
+    }
+    private fun requestError(request: String) : String {
+        return Response.notAllowed("request method[$request] not allowed,")
+    }
+    private fun <T> ok(data: T) : String = Response.ok(data)
+    private fun error(msg: String) : String = Response.error(msg)
 
 }

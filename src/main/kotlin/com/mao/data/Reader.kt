@@ -1,4 +1,4 @@
-package com.mao
+package com.mao.data
 
 import java.io.IOException
 import java.io.InputStream

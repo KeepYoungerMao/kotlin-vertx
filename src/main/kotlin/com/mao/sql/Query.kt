@@ -1,6 +1,7 @@
-package com.mao
+package com.mao.sql
 
-import com.mao.Response.ok
+import com.mao.data.Response.ok
+import com.mao.handler.ApiHandler
 import io.vertx.core.AsyncResult
 import io.vertx.core.Future
 import io.vertx.core.Handler
@@ -8,7 +9,7 @@ import io.vertx.core.Handler
 class Query {
 
     fun execute(query: String, single: Boolean, commit: Boolean, handler: Handler<AsyncResult<String>>) {
-        MainVerticle.jdbcClient.getConnection { res -> kotlin.run {
+        ApiHandler.jdbcClient.getConnection { res -> kotlin.run {
             if (res.succeeded()) {
                 val connection = res.result()
                 if (commit) {
@@ -30,7 +31,7 @@ class Query {
                         if (result.succeeded()) {
                             val resultRows = result.result().rows
                             if (resultRows.isEmpty()) {
-                                handler.handle(Future.succeededFuture(""))
+                                handler.handle(Future.succeededFuture(ok(null)))
                             } else {
                                 if (single) {
                                     handler.handle(Future.succeededFuture(ok(resultRows[0].map)))
