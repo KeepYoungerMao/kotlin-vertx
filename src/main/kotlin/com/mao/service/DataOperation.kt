@@ -335,6 +335,11 @@ class DataOperationImpl : DataOperation {
     private fun bookClassify(ctx: RoutingContext) {
         sqlResult(ctx,sqlBuilder.dataDict(DataType.BOOK),single = false,commit = false)
     }
+
+    /**
+     * 保存古籍数据
+     * 接收body参数，使用JsonObject接收
+     */
     private fun saveBook(ctx: RoutingContext) {
         println(ctx.bodyAsJson)
         ctx.response().end(permission("on building"))
@@ -384,6 +389,10 @@ class DataOperationImpl : DataOperation {
         ctx.response().end(permission("no permission to delete data"))
     }
 
+    /**
+     * 根据id查询百家姓详情
+     * id错误返回错误信息
+     */
     private fun bjxSrc(ctx: RoutingContext) {
         val sql = sqlBuilder.bjxSrc(ctx.request().getParam("id"))
         if (null == sql)
@@ -391,6 +400,12 @@ class DataOperationImpl : DataOperation {
         else
             sqlResult(ctx, sql, single = true, commit = false)
     }
+
+    /**
+     * 检索查询百家姓列表
+     * 检索参数：
+     * name：百家姓名称
+     */
     private fun bjxList(ctx: RoutingContext) {
         val sql = sqlBuilder.bjxList(ctx.request().params())
         if (null == sql)
@@ -398,6 +413,13 @@ class DataOperationImpl : DataOperation {
         else
             sqlResult(ctx, sql, single = false, commit = false)
     }
+
+    /**
+     * 分页查询百家姓列表
+     * 分页参数：
+     * page、row
+     * py：百家姓首字母：A-Z
+     */
     private fun bjxPage(ctx: RoutingContext) {
         val sql = sqlBuilder.bjxPage(ctx.request().params())
         sqlResult(ctx, sql, single = false, commit = false)
@@ -415,6 +437,10 @@ class DataOperationImpl : DataOperation {
         ctx.response().end(permission("no permission to delete data"))
     }
 
+    /**
+     * 根据id查询佛经详情
+     * id错误返回错误信息
+     */
     private fun buddhistSrc(ctx: RoutingContext) {
         val sql = sqlBuilder.buddhistSrc(ctx.request().getParam("id"))
         if (null == sql)
@@ -422,6 +448,14 @@ class DataOperationImpl : DataOperation {
         else
             sqlResult(ctx, sql, single = true, commit = false)
     }
+
+    /**
+     * 检索佛经列表
+     * 检索参数：
+     * name：佛经名称
+     * auth：佛经作者
+     * 检索参数为空返回空集合
+     */
     private fun buddhistList(ctx: RoutingContext) {
         val sql = sqlBuilder.buddhistList(ctx.request().params())
         if (null == sql)
@@ -429,10 +463,22 @@ class DataOperationImpl : DataOperation {
         else
             sqlResult(ctx, sql, single = false, commit = false)
     }
+
+    /**
+     * 分页查询佛经列表
+     * 分页参数：
+     * page、row
+     * type：佛经类型
+     */
     private fun buddhistPage(ctx: RoutingContext) {
         val sql = sqlBuilder.buddhistPage(ctx.request().params())
         sqlResult(ctx, sql, single = false, commit = false)
     }
+
+    /**
+     * 根据id查询佛经章节详情
+     * id错误返回错误信息
+     */
     private fun buddhistChapter(ctx: RoutingContext) {
         val sql = sqlBuilder.buddhistChapter(ctx.request().getParam("id"))
         if (null == sql)
@@ -440,6 +486,12 @@ class DataOperationImpl : DataOperation {
         else
             sqlResult(ctx, sql, single = true, commit = false)
     }
+
+    /**
+     * 根据佛经id查询该佛经下多有章节列表
+     * 章节简要列表
+     * id错误返回错误信息
+     */
     private fun buddhistChapters(ctx: RoutingContext) {
         val sql = sqlBuilder.buddhistChapters(ctx.request().getParam("id"))
         if (null == sql)
@@ -447,6 +499,10 @@ class DataOperationImpl : DataOperation {
         else
             sqlResult(ctx, sql, single = false, commit = false)
     }
+
+    /**
+     * 返回佛经的分类数据
+     */
     private fun buddhistClassify(ctx: RoutingContext) {
         sqlResult(ctx,sqlBuilder.dataDict(DataType.BUDDHIST),single = false,commit = false)
     }
