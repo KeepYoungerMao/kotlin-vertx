@@ -8,6 +8,7 @@ import com.mao.enum.OperationType
 import com.mao.enum.EnumOperation
 import io.vertx.core.Handler
 import io.vertx.ext.web.RoutingContext
+import java.lang.Exception
 
 interface DataOperation : Handler<RoutingContext> {
 
@@ -341,12 +342,24 @@ class DataOperationImpl : DataOperation {
      * 接收body参数，使用JsonObject接收
      */
     private fun saveBook(ctx: RoutingContext) {
-        println(ctx.bodyAsJson)
-        ctx.response().end(permission("on building"))
+        try {
+            val sql = sqlBuilder.saveBook(ctx.bodyAsJson)
+            sqlResult(ctx, sql, single = true, commit = true)
+        } catch (e: Exception) {
+            ctx.response().end(error(e.message?:"request error"))
+        }
     }
+
+    /**
+     * 保存多个古籍数据
+     */
     private fun saveBooks(ctx: RoutingContext) {
-        println(ctx.bodyAsJsonArray)
-        ctx.response().end(permission("on building"))
+        try {
+            val sql = sqlBuilder.saveBooks(ctx.bodyAsJsonArray)
+            sqlResult(ctx, sql, single = false, commit = true)
+        } catch (e: Exception) {
+            ctx.response().end(error(e.message?:"request error"))
+        }
     }
     private fun saveBookChapter(ctx: RoutingContext) {
         println(ctx.bodyAsJson)

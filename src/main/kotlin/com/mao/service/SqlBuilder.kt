@@ -1,8 +1,10 @@
 package com.mao.service
 
 import com.mao.enum.DataType
+import com.mao.handler.ApiHandler
 import com.mao.util.SU
 import io.vertx.core.MultiMap
+import io.vertx.core.json.JsonArray
 import io.vertx.core.json.JsonObject
 
 /**
@@ -127,7 +129,41 @@ class SqlBuilder {
     }
 
     /**
-     * 保存古籍数据
+     * 保存古籍数据SQL
+     * 数据各项进行检查，检查错误抛出异常，由调用方法拦截
+     */
+    fun saveBook(obj: JsonObject) : String {
+        val sql = bookCheck(obj)
+        return """
+            INSERT INTO tt_book(`id`,`name`,`auth`,`image`,`s_image`,`intro`,`guide`,`guide_auth`,
+            `score`,`type`,`type_id`,`dynasty`,`dynasty_id`,`count`,`free`,`off_sale`,`update`) 
+            VALUE $sql
+        """
+    }
+
+    /**
+     * 保存多个古籍数据SQL
+     * 遍历多个古籍数据，并依次进行检查，只要有一个错误便抛出异常，所有数据都不会保存
+     * 异常由调用方法进行拦截
+     */
+    fun saveBooks(array: JsonArray) : String {
+        if (array.isEmpty)
+            throw IllegalArgumentException("can not find any request data")
+        var sql = """
+            INSERT INTO tt_book(`id`,`name`,`auth`,`image`,`s_image`,`intro`,`guide`,`guide_auth`,
+            `score`,`type`,`type_id`,`dynasty`,`dynasty_id`,`count`,`free`,`off_sale`,`update`) VALUES 
+        """
+        val size = array.size()
+        for (i in 0 until size) {
+            sql += bookCheck(array.getJsonObject(i))
+            if (i != size.dec())
+                sql += ","
+        }
+        return sql
+    }
+
+    /**
+     * 古籍参数的检查
      * id：              主键
      * name：            名称
      * auth：            作者
@@ -146,8 +182,9 @@ class SqlBuilder {
      * off_sale：        是否下架
      * update：          更新时间
      * delete：          是否删除
+     * 返回SQL语句中需要保存的部分
      */
-    fun saveBook(obj: JsonObject) : String? {
+    private fun bookCheck(obj: JsonObject) : String {
         val name = obj.getString("name")
         val auth = obj.getString("auth")
         val sImage = obj.getString("s_image")
@@ -160,10 +197,45 @@ class SqlBuilder {
         val typeId = obj.getInteger("type_id")
         val dynasty = obj.getString("dynasty")
         val dynastyId = obj.getInteger("dynasty_id")
-        val count = obj.getInteger("count")
-        val free = obj.getBoolean("free")
-        val offSale = obj.getBoolean("off_sale")
-        return "SELECT save_book('$name','$auth','$sImage','$image','$intro','$guide','$guideAuth','$score','$type',$typeId,$dynasty,'$dynastyId',$count,$free,$offSale)"
+        var count = obj.getInteger("count")
+        var free = obj.getBoolean("free")
+        var offSale = obj.getBoolean("off_sale")
+        val error = when {
+            SU.isEmpty(name) -> notNull("name")
+            name.length > 50 -> tooLong("name")
+            SU.isEmpty(auth) -> notNull("auth")
+            auth.length > 50 -> tooLong("auth")
+            SU.isEmpty(sImage) -> notNull("s_image")
+            sImage.length > 100 -> tooLong("s_image")
+            SU.isEmpty(image) -> notNull("image")
+            image.length > 100 -> tooLong("image")
+            SU.isEmpty(guide) -> notNull("guide")
+            guide.length > 100 -> tooLong("guide")
+            SU.isEmpty(guideAuth) -> notNull("guide_auth")
+            guideAuth.length > 20 -> tooLong("guide_auth")
+            SU.isEmpty(score) -> notNull("score")
+            score.length > 5 -> tooLong("score")
+            SU.isEmpty(type) -> notNull("type")
+            type.length > 20 -> tooLong("type")
+            null == typeId -> notNull("type_id")
+            typeId <= 0 -> invalid("type_id")
+            SU.isEmpty(dynasty) -> notNull("dynasty")
+            dynasty.length > 20 -> tooLong("dynasty")
+            null == dynastyId -> notNull("dynasty_id")
+            dynastyId <= 0 -> invalid("dynasty_id")
+            else -> null
+        }
+        if (null != error)
+            throw IllegalArgumentException(error)
+        if (null == count || count < 0) count = 0
+        if (null == free) free = false
+        if (null == offSale) offSale = false
+        val update = System.currentTimeMillis()
+        val id = ApiHandler.idBuilder.nextId()
+        return """
+            ($id,'$name','$auth','$image','$sImage','$intro','$guide','$guideAuth',
+            '$score','$type',$typeId,'$dynasty',$dynastyId,$count,$free,$offSale,$update)
+        """
     }
 
     /**
@@ -301,5 +373,9 @@ class SqlBuilder {
         else
             "SELECT `id`,`order`,`pid`,`title` FROM tt_buddhist_chapter WHERE pid = $id ORDER BY `order`"
     }
+
+    private fun tooLong(name: String) : String = "param $name is too long."
+    private fun notNull(name: String) : String = "param $name must not be null."
+    private fun invalid(name: String) : String = "invalid param $name"
 
 }

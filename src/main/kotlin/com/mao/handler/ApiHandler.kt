@@ -4,6 +4,7 @@ import com.mao.data.PropertiesReader
 import com.mao.data.Response
 import com.mao.service.DataOperation
 import com.mao.service.ErrorHandler
+import com.mao.util.SnowFlake
 import io.vertx.core.AbstractVerticle
 import io.vertx.core.Vertx
 import io.vertx.core.json.JsonObject
@@ -31,13 +32,14 @@ class ApiHandler : AbstractVerticle() {
     private val dataOperation = DataOperation.created()
 
     companion object {
-        var jdbcClient: JDBCClient = JDBCClient.createShared(
+        val jdbcClient: JDBCClient = JDBCClient.createShared(
             Vertx.vertx(), JsonObject()
                 .put("url","jdbc:mysql://localhost:3306/keep_younger?characterEncoding=utf-8&serverTimezone=Asia/Shanghai")
                 .put("driver_class","com.mysql.cj.jdbc.Driver")
                 .put("user","root")
                 .put("password","root")
         )
+        val idBuilder: SnowFlake = SnowFlake(1,1)
     }
 
     override fun start() {
