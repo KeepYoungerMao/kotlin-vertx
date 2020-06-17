@@ -337,45 +337,119 @@ class DataOperationImpl : DataOperation {
     }
     private fun saveBook(ctx: RoutingContext) {
         println(ctx.bodyAsJson)
-        ctx.response().end("building")
+        ctx.response().end(permission("on building"))
     }
     private fun saveBooks(ctx: RoutingContext) {
         println(ctx.bodyAsJsonArray)
-        ctx.response().end("building")
+        ctx.response().end(permission("on building"))
     }
     private fun saveBookChapter(ctx: RoutingContext) {
         println(ctx.bodyAsJson)
-        ctx.response().end("building")
+        ctx.response().end(permission("on building"))
     }
     private fun saveBookChapters(ctx: RoutingContext) {
         println(ctx.bodyAsJsonArray)
-        ctx.response().end("building")
+        ctx.response().end(permission("on building"))
     }
-    private fun updateBook(ctx: RoutingContext) { ctx.response().end(ok("building...")) }
-    private fun updateBooks(ctx: RoutingContext) { ctx.response().end(ok("building...")) }
-    private fun updateBookChapter(ctx: RoutingContext) { ctx.response().end(ok("building...")) }
-    private fun updateBookChapters(ctx: RoutingContext) { ctx.response().end(ok("building...")) }
-    private fun deleteBook(ctx: RoutingContext) { ctx.response().end(ok("building...")) }
-    private fun deleteBooks(ctx: RoutingContext) { ctx.response().end(ok("building...")) }
-    private fun deleteBookChapter(ctx: RoutingContext) { ctx.response().end(ok("building...")) }
-    private fun deleteBookChapters(ctx: RoutingContext) { ctx.response().end(ok("building...")) }
+    private fun updateBook(ctx: RoutingContext) {
+        println(ctx.bodyAsJson)
+        ctx.response().end(permission("on building"))
+    }
+    private fun updateBooks(ctx: RoutingContext) {
+        println(ctx.bodyAsJsonArray)
+        ctx.response().end(permission("on building"))
+    }
+    private fun updateBookChapter(ctx: RoutingContext) {
+        println(ctx.bodyAsJson)
+        ctx.response().end(permission("on building"))
+    }
+    private fun updateBookChapters(ctx: RoutingContext) {
+        println(ctx.bodyAsJsonArray)
+        ctx.response().end(permission("on building"))
+    }
+    private fun deleteBook(ctx: RoutingContext) {
+        //TODO 暂未开放
+        ctx.response().end(permission("no permission to delete data"))
+    }
+    private fun deleteBooks(ctx: RoutingContext) {
+        //TODO 暂未开放
+        ctx.response().end(permission("no permission to delete data"))
+    }
+    private fun deleteBookChapter(ctx: RoutingContext) {
+        //TODO 暂未开放
+        ctx.response().end(permission("no permission to delete data"))
+    }
+    private fun deleteBookChapters(ctx: RoutingContext) {
+        //TODO 暂未开放
+        ctx.response().end(permission("no permission to delete data"))
+    }
 
-    private fun bjxSrc(ctx: RoutingContext) { ctx.response().end(ok("building...")) }
-    private fun bjxList(ctx: RoutingContext) { ctx.response().end(ok("building...")) }
-    private fun bjxPage(ctx: RoutingContext) { ctx.response().end(ok("building...")) }
+    private fun bjxSrc(ctx: RoutingContext) {
+        val sql = sqlBuilder.bjxSrc(ctx.request().getParam("id"))
+        if (null == sql)
+            ctx.response().end(error("invalid param id."))
+        else
+            sqlResult(ctx, sql, single = true, commit = false)
+    }
+    private fun bjxList(ctx: RoutingContext) {
+        val sql = sqlBuilder.bjxList(ctx.request().params())
+        if (null == sql)
+            ctx.response().end(ok(emptyList<Any>()))
+        else
+            sqlResult(ctx, sql, single = false, commit = false)
+    }
+    private fun bjxPage(ctx: RoutingContext) {
+        val sql = sqlBuilder.bjxPage(ctx.request().params())
+        sqlResult(ctx, sql, single = false, commit = false)
+    }
     private fun saveBjx(ctx: RoutingContext) { ctx.response().end(ok("building...")) }
     private fun saveBjxS(ctx: RoutingContext) { ctx.response().end(ok("building...")) }
     private fun updateBjx(ctx: RoutingContext) { ctx.response().end(ok("building...")) }
     private fun updateBjxS(ctx: RoutingContext) { ctx.response().end(ok("building...")) }
-    private fun deleteBjx(ctx: RoutingContext) { ctx.response().end(ok("building...")) }
-    private fun deleteBjxS(ctx: RoutingContext) { ctx.response().end(ok("building...")) }
+    private fun deleteBjx(ctx: RoutingContext) {
+        //TODO 暂未开放
+        ctx.response().end(permission("no permission to delete data"))
+    }
+    private fun deleteBjxS(ctx: RoutingContext) {
+        //TODO 暂未开放
+        ctx.response().end(permission("no permission to delete data"))
+    }
 
-    private fun buddhistSrc(ctx: RoutingContext) { ctx.response().end(ok("building...")) }
-    private fun buddhistList(ctx: RoutingContext) { ctx.response().end(ok("building...")) }
-    private fun buddhistPage(ctx: RoutingContext) { ctx.response().end(ok("building...")) }
-    private fun buddhistChapter(ctx: RoutingContext) { ctx.response().end(ok("building...")) }
-    private fun buddhistChapters(ctx: RoutingContext) { ctx.response().end(ok("building...")) }
-    private fun buddhistClassify(ctx: RoutingContext) { ctx.response().end(ok("building...")) }
+    private fun buddhistSrc(ctx: RoutingContext) {
+        val sql = sqlBuilder.buddhistSrc(ctx.request().getParam("id"))
+        if (null == sql)
+            ctx.response().end(error("invalid param id."))
+        else
+            sqlResult(ctx, sql, single = true, commit = false)
+    }
+    private fun buddhistList(ctx: RoutingContext) {
+        val sql = sqlBuilder.buddhistList(ctx.request().params())
+        if (null == sql)
+            ctx.response().end(ok(emptyList<Any>()))
+        else
+            sqlResult(ctx, sql, single = false, commit = false)
+    }
+    private fun buddhistPage(ctx: RoutingContext) {
+        val sql = sqlBuilder.buddhistPage(ctx.request().params())
+        sqlResult(ctx, sql, single = false, commit = false)
+    }
+    private fun buddhistChapter(ctx: RoutingContext) {
+        val sql = sqlBuilder.buddhistChapter(ctx.request().getParam("id"))
+        if (null == sql)
+            ctx.response().end(error("invalid param id."))
+        else
+            sqlResult(ctx, sql, single = true, commit = false)
+    }
+    private fun buddhistChapters(ctx: RoutingContext) {
+        val sql = sqlBuilder.buddhistChapters(ctx.request().getParam("id"))
+        if (null == sql)
+            ctx.response().end(error("invalid param id."))
+        else
+            sqlResult(ctx, sql, single = false, commit = false)
+    }
+    private fun buddhistClassify(ctx: RoutingContext) {
+        sqlResult(ctx,sqlBuilder.dataDict(DataType.BUDDHIST),single = false,commit = false)
+    }
     private fun saveBuddhist(ctx: RoutingContext) { ctx.response().end(ok("building...")) }
     private fun saveBuddhists(ctx: RoutingContext) { ctx.response().end(ok("building...")) }
     private fun saveBuddhistChapter(ctx: RoutingContext) { ctx.response().end(ok("building...")) }
@@ -384,10 +458,22 @@ class DataOperationImpl : DataOperation {
     private fun updateBuddhists(ctx: RoutingContext) { ctx.response().end(ok("building...")) }
     private fun updateBuddhistChapter(ctx: RoutingContext) { ctx.response().end(ok("building...")) }
     private fun updateBuddhistChapters(ctx: RoutingContext) { ctx.response().end(ok("building...")) }
-    private fun deleteBuddhist(ctx: RoutingContext) { ctx.response().end(ok("building...")) }
-    private fun deleteBuddhists(ctx: RoutingContext) { ctx.response().end(ok("building...")) }
-    private fun deleteBuddhistChapter(ctx: RoutingContext) { ctx.response().end(ok("building...")) }
-    private fun deleteBuddhistChapters(ctx: RoutingContext) { ctx.response().end(ok("building...")) }
+    private fun deleteBuddhist(ctx: RoutingContext) {
+        //TODO 暂未开放
+        ctx.response().end(permission("no permission to delete data"))
+    }
+    private fun deleteBuddhists(ctx: RoutingContext) {
+        //TODO 暂未开放
+        ctx.response().end(permission("no permission to delete data"))
+    }
+    private fun deleteBuddhistChapter(ctx: RoutingContext) {
+        //TODO 暂未开放
+        ctx.response().end(permission("no permission to delete data"))
+    }
+    private fun deleteBuddhistChapters(ctx: RoutingContext) {
+        //TODO 暂未开放
+        ctx.response().end(permission("no permission to delete data"))
+    }
 
     private fun liveSrc(ctx: RoutingContext) { ctx.response().end(ok("building...")) }
     private fun liveList(ctx: RoutingContext) { ctx.response().end(ok("building...")) }
@@ -397,8 +483,14 @@ class DataOperationImpl : DataOperation {
     private fun saveLives(ctx: RoutingContext) { ctx.response().end(ok("building...")) }
     private fun updateLive(ctx: RoutingContext) { ctx.response().end(ok("building...")) }
     private fun updateLives(ctx: RoutingContext) { ctx.response().end(ok("building...")) }
-    private fun deleteLive(ctx: RoutingContext) { ctx.response().end(ok("building...")) }
-    private fun deleteLives(ctx: RoutingContext) { ctx.response().end(ok("building...")) }
+    private fun deleteLive(ctx: RoutingContext) {
+        //TODO 暂未开放
+        ctx.response().end(permission("no permission to delete data"))
+    }
+    private fun deleteLives(ctx: RoutingContext) {
+        //TODO 暂未开放
+        ctx.response().end(permission("no permission to delete data"))
+    }
 
     private fun movieSrc(ctx: RoutingContext) { ctx.response().end(ok("building...")) }
     private fun movieList(ctx: RoutingContext) { ctx.response().end(ok("building...")) }
@@ -408,8 +500,14 @@ class DataOperationImpl : DataOperation {
     private fun saveMovies(ctx: RoutingContext) { ctx.response().end(ok("building...")) }
     private fun updateMovie(ctx: RoutingContext) { ctx.response().end(ok("building...")) }
     private fun updateMovies(ctx: RoutingContext) { ctx.response().end(ok("building...")) }
-    private fun deleteMovie(ctx: RoutingContext) { ctx.response().end(ok("building...")) }
-    private fun deleteMovies(ctx: RoutingContext) { ctx.response().end(ok("building...")) }
+    private fun deleteMovie(ctx: RoutingContext) {
+        //TODO 暂未开放
+        ctx.response().end(permission("no permission to delete data"))
+    }
+    private fun deleteMovies(ctx: RoutingContext) {
+        //TODO 暂未开放
+        ctx.response().end(permission("no permission to delete data"))
+    }
 
     private fun picSrc(ctx: RoutingContext) { ctx.response().end(ok("building...")) }
     private fun picList(ctx: RoutingContext) { ctx.response().end(ok("building...")) }
@@ -419,8 +517,14 @@ class DataOperationImpl : DataOperation {
     private fun savePics(ctx: RoutingContext) { ctx.response().end(ok("building...")) }
     private fun updatePic(ctx: RoutingContext) { ctx.response().end(ok("building...")) }
     private fun updatePics(ctx: RoutingContext) { ctx.response().end(ok("building...")) }
-    private fun deletePic(ctx: RoutingContext) { ctx.response().end(ok("building...")) }
-    private fun deletePics(ctx: RoutingContext) { ctx.response().end(ok("building....")) }
+    private fun deletePic(ctx: RoutingContext) {
+        //TODO 暂未开放
+        ctx.response().end(permission("no permission to delete data"))
+    }
+    private fun deletePics(ctx: RoutingContext) {
+        //TODO 暂未开放
+        ctx.response().end(permission("no permission to delete data"))
+    }
 
     /**
      * 同一执行sql语句，并操作RoutingContext返回数据
@@ -451,5 +555,6 @@ class DataOperationImpl : DataOperation {
     }
     private fun <T> ok(data: T) : String = Response.ok(data)
     private fun error(msg: String) : String = Response.error(msg)
+    private fun permission(msg: String) : String = Response.permission(msg)
 
 }

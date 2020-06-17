@@ -17,7 +17,7 @@ class Query {
                         if (update.succeeded()) {
                             connection.commit { status -> kotlin.run {
                                 if (status.succeeded()) {
-                                    handler.handle(Future.future { success -> success.complete("update or save success") })
+                                    handler.handle(Future.succeededFuture(ok("process completed successfully.")))
                                 } else {
                                     handler.handle(Future.failedFuture("commit failed."))
                                 }
