@@ -19,6 +19,53 @@ class SqlBuilder {
 
     /**
      * 数据保存SQL拼接
+     * 参见SQL前缀拼接 dataSavePre() 和SQL后缀拼接 dataSaveEnd()
+     */
+    private fun dataSave(obj: JsonObject, table: DataTable) : String {
+        return dataSavePre(table,true) + dataSaveEnd(obj, table)
+    }
+
+    /**
+     * 保存多个数据的SQL语句组装
+     * 保存步骤为：
+     * dataSavePre() + dataSaveEnd() + ',' + dataSaveEnd() +...
+     */
+    private fun dataSave(array: JsonArray, table: DataTable) : String {
+        if (array.isEmpty)
+            throw IllegalArgumentException("invalid body data.")
+        val pre = dataSavePre(table,false)
+        var end = ""
+        val size = array.size()
+        for (i in 0 until size) {
+            end += dataSaveEnd(array.getJsonObject(i),table)
+            if (i != size.dec())
+                end += ","
+        }
+        return pre + end
+    }
+
+    /**
+     * 组装保存数据SQL语句的前面部分
+     * INSERT INTO table_name(column1,column2,column3) VALUE
+     * INSERT INTO table_name(column1,column2,column3) VALUES
+     * single字段为true时为VALUE，false时为VALUES
+     * @param table 表结构数据
+     * @param single 是否为单条数据
+     */
+    private fun dataSavePre(table: DataTable, single: Boolean) : String {
+        var sql = "INSERT INTO ${table.name}("
+        table.columns.forEach { column -> kotlin.run {
+            if (column.type != Column.IGNORE)
+                sql += "`${column.name}`,"
+        } }
+        sql = sql.substring(0,sql.length.dec())
+        sql += ")"
+        sql += if (single) " VALUE " else " VALUES "
+        return sql
+    }
+
+    /**
+     * 组装保存sql语句的后面部分
      * 数据类型参数检查，数据类型Enum统一继承Table类
      * 对各个字段进行检查，有问题抛出异常，无问题拼接SQL并返回
      * 检查事项：
@@ -28,9 +75,10 @@ class SqlBuilder {
      *     字符串字段不能大于指定长度
      *     数字类型不能为空
      *     数字类型不能小于等于0
-     *     布尔类型不能为空
+     *     布尔类型：如果字段为空，则按照table数据中len值赋值（0：false，1：true）
+     *     文本字段目前没有作判断，对空或null值都进行保存。但再data_table.json中len字段做了KB大小限制
      */
-    private fun dataSave(obj: JsonObject, table: DataTable) : String {
+    private fun dataSaveEnd(obj: JsonObject, table: DataTable) : String {
         if (obj.isEmpty || obj.size() > table.columns.size)
             throw IllegalArgumentException("invalid body data.")
         var sql = "("
@@ -50,8 +98,12 @@ class SqlBuilder {
                     sql += "$value,"
                 }
                 Column.BOOLEAN -> {
-                    val value = obj.getBoolean(name) ?: throw IllegalArgumentException(notNull(name))
-                    sql += "$value,"
+                    val value = obj.getBoolean(name)
+                    sql += when {
+                        null != value -> "$value,"
+                        column.len == 0 -> "FALSE,"
+                        else -> "TRUE,"
+                    }
                 }
                 Column.STRING -> {
                     val value = obj.getString(name)
@@ -78,6 +130,8 @@ class SqlBuilder {
         } }
         return sql.substring(0,sql.length.dec())+")"
     }
+
+
 
     /**
      * 数据更新SQL拼接
@@ -278,12 +332,7 @@ class SqlBuilder {
     fun saveBook(obj: JsonObject) : String {
         val table = DataTableUtil.getTable(DataTableEnum.BOOK)
             ?: throw IllegalArgumentException("database error: not found this table")
-        val sql = dataSave(obj,table)
-        return """
-            INSERT INTO tt_book(`id`,`name`,`auth`,`image`,`s_image`,`intro`,`guide`,`guide_auth`,
-            `score`,`type`,`type_id`,`dynasty`,`dynasty_id`,`count`,`free`,`off_sale`,`update`) 
-            VALUE $sql
-        """.trimIndent()
+        return dataSave(obj,table)
     }
 
     /**
@@ -293,20 +342,8 @@ class SqlBuilder {
      */
     fun saveBooks(array: JsonArray) : String {
         val table = DataTableUtil.getTable(DataTableEnum.BOOK)
-            ?: throw IllegalArgumentException("database error: not found this table")
-        if (array.isEmpty)
-            throw IllegalArgumentException("can not find any request data")
-        var sql = """
-            INSERT INTO tt_book(`id`,`name`,`auth`,`image`,`s_image`,`intro`,`guide`,`guide_auth`,
-            `score`,`type`,`type_id`,`dynasty`,`dynasty_id`,`count`,`free`,`off_sale`,`update`) VALUES 
-        """.trimIndent()
-        val size = array.size()
-        for (i in 0 until size) {
-            sql += dataSave(array.getJsonObject(i),table)
-            if (i != size.dec())
-                sql += ","
-        }
-        return sql
+                ?: throw IllegalArgumentException("database error: not found this table")
+        return dataSave(array,table)
     }
 
     /**
@@ -315,8 +352,7 @@ class SqlBuilder {
     fun saveBookChapter(obj: JsonObject) : String {
         val table = DataTableUtil.getTable(DataTableEnum.BOOK_CHAPTER)
             ?: throw IllegalArgumentException("database error: not found this table")
-        val sql = dataSave(obj,table)
-        return "INSERT INTO tt_book_chapter(`id`,`order`,`name`,`book_id`,`content`) VALUE $sql"
+        return dataSave(obj, table)
     }
 
     /**
@@ -325,16 +361,7 @@ class SqlBuilder {
     fun saveBookChapters(array: JsonArray) : String {
         val table = DataTableUtil.getTable(DataTableEnum.BOOK_CHAPTER)
             ?: throw IllegalArgumentException("database error: not found this table")
-        if (array.isEmpty)
-            throw IllegalArgumentException("can not find any request data")
-        var sql = "INSERT INTO tt_book_chapter(`id`,`order`,`name`,`book_id`,`content`) VALUE "
-        val size = array.size()
-        for (i in 0 until size) {
-            sql += dataSave(array.getJsonObject(i),table)
-            if (i != size.dec())
-                sql += ","
-        }
-        return sql
+        return dataSave(array, table)
     }
 
     /**
@@ -409,8 +436,7 @@ class SqlBuilder {
     fun saveBjx(obj: JsonObject) : String {
         val table = DataTableUtil.getTable(DataTableEnum.BJX)
             ?: throw IllegalArgumentException("database error: not found this table")
-        val sql = dataSave(obj,table)
-        return "INSERT INTO tt_bjx(`id`,`name`,`py`,`src`,`update`) VALUE $sql"
+        return dataSave(obj, table)
     }
 
     /**
@@ -419,16 +445,7 @@ class SqlBuilder {
     fun saveBjxS(array: JsonArray) : String {
         val table = DataTableUtil.getTable(DataTableEnum.BJX)
             ?: throw IllegalArgumentException("database error: not found this table")
-        if (array.isEmpty)
-            throw IllegalArgumentException("can not find any request data")
-        var sql = "INSERT INTO tt_bjx(`id`,`name`,`py`,`src`,`update`) VALUES "
-        val size = array.size()
-        for (i in 0 until size) {
-            sql += dataSave(array.getJsonObject(i),table)
-            if (i != size.dec())
-                sql += ","
-        }
-        return sql
+        return dataSave(array, table)
     }
 
     /**
@@ -534,8 +551,7 @@ class SqlBuilder {
     fun saveBuddhist(obj: JsonObject) : String {
         val table = DataTableUtil.getTable(DataTableEnum.BUDDHIST)
             ?: throw IllegalArgumentException("database error: not found this table")
-        val sql = dataSave(obj,table)
-        return "INSERT INTO tt_buddhist(`id`,`name`,`auth`,`image`,`type`,`type_id`,`intro`,`update`) VALUE $sql"
+        return dataSave(obj, table)
     }
 
     /**
@@ -544,16 +560,7 @@ class SqlBuilder {
     fun saveBuddhists(array: JsonArray) : String {
         val table = DataTableUtil.getTable(DataTableEnum.BUDDHIST)
             ?: throw IllegalArgumentException("database error: not found this table")
-        if (array.isEmpty)
-            throw IllegalArgumentException("can not find any request data")
-        var sql = "INSERT INTO tt_buddhist(`id`,`name`,`auth`,`image`,`type`,`type_id`,`intro`,`update`) VALUES "
-        val size = array.size()
-        for (i in 0 until size) {
-            sql += dataSave(array.getJsonObject(i),table)
-            if (i != size.dec())
-                sql += ","
-        }
-        return sql
+        return dataSave(array, table)
     }
 
     /**
@@ -562,8 +569,7 @@ class SqlBuilder {
     fun saveBuddhistChapter(obj: JsonObject) : String {
         val table = DataTableUtil.getTable(DataTableEnum.BUDDHIST_CHAPTER)
             ?: throw IllegalArgumentException("database error: not found this table")
-        val sql = dataSave(obj,table)
-        return "INSERT INTO tt_bjx(`id`,`pid`,`order`,`title`,`src`,`update`) VALUE $sql"
+        return dataSave(obj, table)
     }
 
     /**
@@ -572,16 +578,7 @@ class SqlBuilder {
     fun saveBuddhistChapters(array: JsonArray) : String {
         val table = DataTableUtil.getTable(DataTableEnum.BUDDHIST_CHAPTER)
             ?: throw IllegalArgumentException("database error: not found this table")
-        if (array.isEmpty)
-            throw IllegalArgumentException("can not find any request data")
-        var sql = "INSERT INTO tt_bjx(`id`,`pid`,`order`,`title`,`src`,`update`) VALUES "
-        val size = array.size()
-        for (i in 0 until size) {
-            sql += dataSave(array.getJsonObject(i),table)
-            if (i != size.dec())
-                sql += ","
-        }
-        return sql
+        return dataSave(array, table)
     }
 
     /**
@@ -599,6 +596,87 @@ class SqlBuilder {
     fun updateBuddhistChapter(obj: JsonObject) : String {
         val table = DataTableUtil.getTable(DataTableEnum.BUDDHIST_CHAPTER)
             ?: throw IllegalArgumentException("database error: not found this table")
+        return dataUpdate(obj, table)
+    }
+
+    /**
+     * 保存直播源数据
+     */
+    fun saveLive(obj: JsonObject) : String {
+        val table = DataTableUtil.getTable(DataTableEnum.LIVE)
+                ?: throw IllegalArgumentException("database error: not found this table")
+        return dataSave(obj, table)
+    }
+
+    /**
+     * 保存多个直播源数据
+     */
+    fun saveLives(array: JsonArray) : String {
+        val table = DataTableUtil.getTable(DataTableEnum.LIVE)
+                ?: throw IllegalArgumentException("database error: not found this table")
+        return dataSave(array, table)
+    }
+
+    /**
+     * 更新直播源数据
+     */
+    fun updateLive(obj: JsonObject) : String {
+        val table = DataTableUtil.getTable(DataTableEnum.LIVE)
+                ?: throw IllegalArgumentException("database error: not found this table")
+        return dataUpdate(obj, table)
+    }
+
+    /**
+     * 保存电影数据
+     */
+    fun saveMovie(obj: JsonObject) : String {
+        val table = DataTableUtil.getTable(DataTableEnum.MOVIE)
+                ?: throw IllegalArgumentException("database error: not found this table")
+        return dataSave(obj, table)
+    }
+
+    /**
+     * 保存多个电影数据
+     */
+    fun saveMovies(array: JsonArray) : String {
+        val table = DataTableUtil.getTable(DataTableEnum.MOVIE)
+                ?: throw IllegalArgumentException("database error: not found this table")
+        return dataSave(array, table)
+    }
+
+    /**
+     * 更新电影数据
+     */
+    fun updateMovie(obj: JsonObject) : String {
+        val table = DataTableUtil.getTable(DataTableEnum.MOVIE)
+                ?: throw IllegalArgumentException("database error: not found this table")
+        return dataUpdate(obj, table)
+    }
+
+    /**
+     * 保存图片数据
+     */
+    fun savePic(obj: JsonObject) : String {
+        val table = DataTableUtil.getTable(DataTableEnum.PIC)
+                ?: throw IllegalArgumentException("database error: not found this table")
+        return dataSave(obj, table)
+    }
+
+    /**
+     * 保存多个图片数据
+     */
+    fun savePics(array: JsonArray) : String {
+        val table = DataTableUtil.getTable(DataTableEnum.PIC)
+                ?: throw IllegalArgumentException("database error: not found this table")
+        return dataSave(array, table)
+    }
+
+    /**
+     * 更新图片数据
+     */
+    fun updatePic(obj: JsonObject) : String {
+        val table = DataTableUtil.getTable(DataTableEnum.PIC)
+                ?: throw IllegalArgumentException("database error: not found this table")
         return dataUpdate(obj, table)
     }
 

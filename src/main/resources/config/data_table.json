@@ -73,7 +73,7 @@
     ]
   },{
     "table": "LIVE",
-    "name": "tt_live",
+    "name": "tt_live_m3u8",
     "columns": [
       {"name": "id", "type": "KEY", "len": 20},
       {"name": "name", "type": "STRING", "len": 50},
@@ -88,7 +88,7 @@
     ]
   },{
     "table": "MOVIE",
-    "name": "tt_movie",
+    "name": "tt_movie_m3u8",
     "columns": [
       {"name": "id", "type": "KEY", "len": 20},
       {"name": "name", "type": "STRING", "len": 50},
@@ -117,7 +117,7 @@
       {"name": "sid", "type": "LONG", "len": 10},
       {"name": "s_image", "type": "STRING", "len": 100},
       {"name": "image", "type": "STRING", "len": 100},
-      {"name": "key", "type": "TEXT", "len": 10},
+      {"name": "key", "type": "STRING", "len": 400},
       {"name": "update", "type": "UPDATE", "len": 13},
       {"name": "delete", "type": "IGNORE", "len": 0}
     ]

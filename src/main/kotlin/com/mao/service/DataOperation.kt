@@ -744,13 +744,68 @@ class DataOperationImpl : DataOperation {
     private fun liveSrc(ctx: RoutingContext) { ctx.response().end(ok("building...")) }
     private fun liveList(ctx: RoutingContext) { ctx.response().end(ok("building...")) }
     private fun livePage(ctx: RoutingContext) { ctx.response().end(ok("building...")) }
-    private fun liveClassify(ctx: RoutingContext) { ctx.response().end(ok("building...")) }
-    private fun saveLive(ctx: RoutingContext) { ctx.response().end(ok("building...")) }
-    private fun saveLives(ctx: RoutingContext) { ctx.response().end(ok("building...")) }
-    private fun updateLive(ctx: RoutingContext) { ctx.response().end(ok("building...")) }
+
+    /**
+     * 查询直播源分类数据
+     */
+    private fun liveClassify(ctx: RoutingContext) {
+        sqlResult(ctx,sqlBuilder.dataDict(DataType.LIVE),single = false,commit = false)
+    }
+
+    /**
+     * 保存直播源数据
+     */
+    private fun saveLive(ctx: RoutingContext) {
+        var sql: String? = null
+        try {
+            sql = sqlBuilder.saveLive(ctx.bodyAsJson)
+        } catch (e: Exception) {
+            ctx.response().end(error(e.message?:"request error"))
+        }
+        if (null != sql)
+            sqlResult(ctx, sql, single = true, commit = true)
+    }
+
+    /**
+     * 保存多个直播源数据
+     */
+    private fun saveLives(ctx: RoutingContext) {
+        var sql: String? = null
+        try {
+            sql = sqlBuilder.saveLives(ctx.bodyAsJsonArray)
+        } catch (e: Exception) {
+            ctx.response().end(error(e.message?:"request error"))
+        }
+        if (null != sql)
+            sqlResult(ctx, sql, single = false, commit = true)
+    }
+
+    /**
+     * 更新直播源数据
+     */
+    private fun updateLive(ctx: RoutingContext) {
+        var sql: String? = null
+        try {
+            sql = sqlBuilder.updateLive(ctx.bodyAsJson)
+        } catch (e: Exception) {
+            ctx.response().end(error(e.message?:"request error"))
+        }
+        if (null != sql)
+            sqlResult(ctx, sql, single = true, commit = true)
+    }
+
+    /**
+     * 删除直播源数据，接收直播源id
+     * 暂时不开放
+     */
     private fun deleteLive(ctx: RoutingContext) {
         ctx.response().end(permission("no permission to delete live data"))
     }
+
+    /**
+     * 删除多个直播源数据，接收id拼接字符串
+     * 暂时不开放
+     */
     private fun deleteLives(ctx: RoutingContext) {
         ctx.response().end(permission("no permission to delete live data"))
     }
@@ -758,13 +813,68 @@ class DataOperationImpl : DataOperation {
     private fun movieSrc(ctx: RoutingContext) { ctx.response().end(ok("building...")) }
     private fun movieList(ctx: RoutingContext) { ctx.response().end(ok("building...")) }
     private fun moviePage(ctx: RoutingContext) { ctx.response().end(ok("building...")) }
-    private fun movieClassify(ctx: RoutingContext) { ctx.response().end(ok("building...")) }
-    private fun saveMovie(ctx: RoutingContext) { ctx.response().end(ok("building...")) }
-    private fun saveMovies(ctx: RoutingContext) { ctx.response().end(ok("building...")) }
-    private fun updateMovie(ctx: RoutingContext) { ctx.response().end(ok("building...")) }
+
+    /**
+     * 查询电影分类数据
+     */
+    private fun movieClassify(ctx: RoutingContext) {
+        sqlResult(ctx,sqlBuilder.dataDict(DataType.MOVIE),single = false,commit = false)
+    }
+
+    /**
+     * 保存电影数据
+     */
+    private fun saveMovie(ctx: RoutingContext) {
+        var sql: String? = null
+        try {
+            sql = sqlBuilder.saveMovie(ctx.bodyAsJson)
+        } catch (e: Exception) {
+            ctx.response().end(error(e.message?:"request error"))
+        }
+        if (null != sql)
+            sqlResult(ctx, sql, single = true, commit = true)
+    }
+
+    /**
+     * 保存多个电影数据
+     */
+    private fun saveMovies(ctx: RoutingContext) {
+        var sql: String? = null
+        try {
+            sql = sqlBuilder.saveMovies(ctx.bodyAsJsonArray)
+        } catch (e: Exception) {
+            ctx.response().end(error(e.message?:"request error"))
+        }
+        if (null != sql)
+            sqlResult(ctx, sql, single = true, commit = true)
+    }
+
+    /**
+     * 更新电影数据
+     */
+    private fun updateMovie(ctx: RoutingContext) {
+        var sql: String? = null
+        try {
+            sql = sqlBuilder.updateMovie(ctx.bodyAsJson)
+        } catch (e: Exception) {
+            ctx.response().end(error(e.message?:"request error"))
+        }
+        if (null != sql)
+            sqlResult(ctx, sql, single = true, commit = true)
+    }
+
+    /**
+     * 删除电影数据，接收电影id参数
+     * 暂时不开放
+     */
     private fun deleteMovie(ctx: RoutingContext) {
         ctx.response().end(permission("no permission to delete movie data"))
     }
+
+    /**
+     * 删除多个电影数据，接收id拼接字符串
+     * 暂时不开放
+     */
     private fun deleteMovies(ctx: RoutingContext) {
         ctx.response().end(permission("no permission to delete movie data"))
     }
@@ -772,13 +882,68 @@ class DataOperationImpl : DataOperation {
     private fun picSrc(ctx: RoutingContext) { ctx.response().end(ok("building...")) }
     private fun picList(ctx: RoutingContext) { ctx.response().end(ok("building...")) }
     private fun picPage(ctx: RoutingContext) { ctx.response().end(ok("building...")) }
-    private fun picClassify(ctx: RoutingContext) { ctx.response().end(ok("building...")) }
-    private fun savePic(ctx: RoutingContext) { ctx.response().end(ok("building...")) }
-    private fun savePics(ctx: RoutingContext) { ctx.response().end(ok("building...")) }
-    private fun updatePic(ctx: RoutingContext) { ctx.response().end(ok("building...")) }
+
+    /**
+     * 查询图片分类数据
+     */
+    private fun picClassify(ctx: RoutingContext) {
+        sqlResult(ctx,sqlBuilder.dataDict(DataType.PIC),single = false,commit = false)
+    }
+
+    /**
+     * 保存图片数据
+     */
+    private fun savePic(ctx: RoutingContext) {
+        var sql: String? = null
+        try {
+            sql = sqlBuilder.savePic(ctx.bodyAsJson)
+        } catch (e: Exception) {
+            ctx.response().end(error(e.message?:"request error"))
+        }
+        if (null != sql)
+            sqlResult(ctx, sql, single = true, commit = true)
+    }
+
+    /**
+     * 保存多个图片数据
+     */
+    private fun savePics(ctx: RoutingContext) {
+        var sql: String? = null
+        try {
+            sql = sqlBuilder.savePics(ctx.bodyAsJsonArray)
+        } catch (e: Exception) {
+            ctx.response().end(error(e.message?:"request error"))
+        }
+        if (null != sql)
+            sqlResult(ctx, sql, single = true, commit = true)
+    }
+
+    /**
+     * 更新图片数据
+     */
+    private fun updatePic(ctx: RoutingContext) {
+        var sql: String? = null
+        try {
+            sql = sqlBuilder.updatePic(ctx.bodyAsJson)
+        } catch (e: Exception) {
+            ctx.response().end(error(e.message?:"request error"))
+        }
+        if (null != sql)
+            sqlResult(ctx, sql, single = true, commit = true)
+    }
+
+    /**
+     * 删除图片数据，接收图片id参数
+     * 暂时不开放
+     */
     private fun deletePic(ctx: RoutingContext) {
         ctx.response().end(permission("no permission to delete pic data"))
     }
+
+    /**
+     * 删除多个图片数据，接收id拼接字符串
+     * 暂时不开放
+     */
     private fun deletePics(ctx: RoutingContext) {
         ctx.response().end(permission("no permission to delete pic data"))
     }
