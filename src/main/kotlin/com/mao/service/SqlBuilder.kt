@@ -1,6 +1,7 @@
 package com.mao.service
 
-import com.mao.enum.DataType
+import com.mao.data.*
+import com.mao.enum.*
 import com.mao.handler.ApiHandler
 import com.mao.util.SU
 import io.vertx.core.MultiMap
@@ -13,6 +14,148 @@ import io.vertx.core.json.JsonObject
  * 【注】：参数为字符串时需添加：''
  */
 class SqlBuilder {
+
+    //===================================== util start ================================================
+
+    /**
+     * 数据保存SQL拼接
+     * 数据类型参数检查，数据类型Enum统一继承Table类
+     * 对各个字段进行检查，有问题抛出异常，无问题拼接SQL并返回
+     * 检查事项：
+     *     数据body不能为空
+     *     数据body字段不能多于表字段，防止恶意传递数据
+     *     字符串字段不能为空
+     *     字符串字段不能大于指定长度
+     *     数字类型不能为空
+     *     数字类型不能小于等于0
+     *     布尔类型不能为空
+     */
+    private fun dataSave(obj: JsonObject, table: DataTable) : String {
+        if (obj.isEmpty || obj.size() > table.columns.size)
+            throw IllegalArgumentException("invalid body data.")
+        var sql = "("
+        table.columns.forEach { column -> kotlin.run {
+            val name = column.name
+            when (column.type) {
+                Column.LONG -> {
+                    val value = obj.getLong(name) ?: throw IllegalArgumentException(notNull(name))
+                    if (value <= 0)
+                        throw IllegalArgumentException(invalid(name))
+                    sql += "$value,"
+                }
+                Column.INT -> {
+                    val value = obj.getInteger(name) ?: throw IllegalArgumentException(notNull(name))
+                    if (value <= 0)
+                        throw IllegalArgumentException(invalid(name))
+                    sql += "$value,"
+                }
+                Column.BOOLEAN -> {
+                    val value = obj.getBoolean(name) ?: throw IllegalArgumentException(notNull(name))
+                    sql += "$value,"
+                }
+                Column.STRING -> {
+                    val value = obj.getString(name)
+                    if (SU.isEmpty(value))
+                        throw IllegalArgumentException(notNull(name))
+                    if (value.length > column.len)
+                        throw IllegalArgumentException(tooLong(name))
+                    sql += "'$value',"
+                }
+                Column.TEXT -> {
+                    val value = obj.getString(name)
+                    sql += "'$value',"
+                }
+                Column.KEY -> {
+                    val value = ApiHandler.idBuilder.nextId()
+                    sql += "$value,"
+                }
+                Column.IGNORE -> {}
+                Column.UPDATE -> {
+                    val value = System.currentTimeMillis()
+                    sql += "$value,"
+                }
+            }
+        } }
+        return sql.substring(0,sql.length.dec())+")"
+    }
+
+    /**
+     * 数据更新SQL拼接
+     * 检查body数据是否不为空，为正常数据
+     * 数据更新的表中（继承Table的Enum类）必须包含UPDATE字段和KEY字段类型，否则不予保存
+     * 更新数据判断：
+     * 数据body中没有该字段或该字段为null，则该字段不会被更新
+     * 字段为空字符串时会被更新。（""）
+     */
+    private fun dataUpdate(obj: JsonObject, table: DataTable) : String {
+        if (obj.isEmpty || obj.size() > table.columns.size)
+            throw IllegalArgumentException("invalid body data.")
+        val sqlPre = "UPDATE $table SET "
+        var sqlCenter = ""
+        var sqlEnd = ""
+        var sqlUpdate = ""
+        table.columns.forEach { column -> kotlin.run {
+            val name = column.name
+            when (column.type) {
+                Column.LONG -> {
+                    val value = obj.getLong(name)
+                    if (null != value){
+                        if (value < 0)
+                            throw IllegalArgumentException(invalid(name))
+                        sqlCenter += "`$name` = $value,"
+                    }
+                }
+                Column.INT -> {
+                    val value = obj.getInteger(name)
+                    if (null != value) {
+                        if (value < 0)
+                            throw IllegalArgumentException(invalid(name))
+                        sqlCenter += "`$name` = $value,"
+                    }
+                }
+                Column.BOOLEAN -> {
+                    val value = obj.getBoolean(name)
+                    if (null != value) {
+                        sqlCenter += "`$name` = $value,"
+                    }
+                }
+                Column.STRING -> {
+                    val value = obj.getString(name)
+                    if (null != value) {
+                        if (value.length > column.len)
+                            throw IllegalArgumentException(tooLong(name))
+                        sqlCenter += "`$name` = '$value',"
+                    }
+                }
+                Column.TEXT -> {
+                    val value = obj.getString(name)
+                    if (null != value) {
+                        sqlCenter += "`$name` = '$value',"
+                    }
+                }
+                Column.KEY -> {
+                    val value = obj.getLong(name) ?: throw IllegalArgumentException(notNull(name))
+                    if (value <= 0)
+                        throw IllegalArgumentException(invalid(name))
+                    sqlEnd = "WHERE `$name` = $value"
+                }
+                Column.IGNORE -> {}
+                Column.UPDATE -> {
+                    val time = System.currentTimeMillis()
+                    sqlUpdate = "`$name` = $time"
+                }
+            }
+        } }
+        if (sqlCenter.isEmpty())
+            throw IllegalArgumentException("no column data to update.")
+        if (sqlEnd.isEmpty())
+            throw IllegalArgumentException("cannot find any key column to update.")
+        if (sqlUpdate.isEmpty())
+            throw IllegalArgumentException("cannot find any update column to update.")
+        return sqlPre + sqlCenter + sqlUpdate + sqlEnd
+    }
+
+    //===================================== util end ===================================================
 
     /**
      * 获取数据分类数据
@@ -133,12 +276,14 @@ class SqlBuilder {
      * 数据各项进行检查，检查错误抛出异常，由调用方法拦截
      */
     fun saveBook(obj: JsonObject) : String {
-        val sql = bookCheck(obj)
+        val table = DataTableUtil.getTable(DataTableEnum.BOOK)
+            ?: throw IllegalArgumentException("database error: not found this table")
+        val sql = dataSave(obj,table)
         return """
             INSERT INTO tt_book(`id`,`name`,`auth`,`image`,`s_image`,`intro`,`guide`,`guide_auth`,
             `score`,`type`,`type_id`,`dynasty`,`dynasty_id`,`count`,`free`,`off_sale`,`update`) 
             VALUE $sql
-        """
+        """.trimIndent()
     }
 
     /**
@@ -147,15 +292,17 @@ class SqlBuilder {
      * 异常由调用方法进行拦截
      */
     fun saveBooks(array: JsonArray) : String {
+        val table = DataTableUtil.getTable(DataTableEnum.BOOK)
+            ?: throw IllegalArgumentException("database error: not found this table")
         if (array.isEmpty)
             throw IllegalArgumentException("can not find any request data")
         var sql = """
             INSERT INTO tt_book(`id`,`name`,`auth`,`image`,`s_image`,`intro`,`guide`,`guide_auth`,
             `score`,`type`,`type_id`,`dynasty`,`dynasty_id`,`count`,`free`,`off_sale`,`update`) VALUES 
-        """
+        """.trimIndent()
         val size = array.size()
         for (i in 0 until size) {
-            sql += bookCheck(array.getJsonObject(i))
+            sql += dataSave(array.getJsonObject(i),table)
             if (i != size.dec())
                 sql += ","
         }
@@ -163,79 +310,49 @@ class SqlBuilder {
     }
 
     /**
-     * 古籍参数的检查
-     * id：              主键
-     * name：            名称
-     * auth：            作者
-     * s_image：         小图片地址
-     * image：           大图片地址
-     * intro：           介绍
-     * guide：           导读
-     * guide_auth：      导读人
-     * score：           得分
-     * type：            古籍类型
-     * type_id：         古籍类型id
-     * dynasty：         朝代
-     * dynasty_id：      朝代id
-     * count：           数量
-     * free：            是否免费
-     * off_sale：        是否下架
-     * update：          更新时间
-     * delete：          是否删除
-     * 返回SQL语句中需要保存的部分
+     * 保存古籍章节详情数据SQL
      */
-    private fun bookCheck(obj: JsonObject) : String {
-        val name = obj.getString("name")
-        val auth = obj.getString("auth")
-        val sImage = obj.getString("s_image")
-        val image = obj.getString("image")
-        val intro = obj.getString("intro")
-        val guide = obj.getString("guide")
-        val guideAuth = obj.getString("guide_auth")
-        val score = obj.getString("score")
-        val type = obj.getString("type")
-        val typeId = obj.getInteger("type_id")
-        val dynasty = obj.getString("dynasty")
-        val dynastyId = obj.getInteger("dynasty_id")
-        var count = obj.getInteger("count")
-        var free = obj.getBoolean("free")
-        var offSale = obj.getBoolean("off_sale")
-        val error = when {
-            SU.isEmpty(name) -> notNull("name")
-            name.length > 50 -> tooLong("name")
-            SU.isEmpty(auth) -> notNull("auth")
-            auth.length > 50 -> tooLong("auth")
-            SU.isEmpty(sImage) -> notNull("s_image")
-            sImage.length > 100 -> tooLong("s_image")
-            SU.isEmpty(image) -> notNull("image")
-            image.length > 100 -> tooLong("image")
-            SU.isEmpty(guide) -> notNull("guide")
-            guide.length > 100 -> tooLong("guide")
-            SU.isEmpty(guideAuth) -> notNull("guide_auth")
-            guideAuth.length > 20 -> tooLong("guide_auth")
-            SU.isEmpty(score) -> notNull("score")
-            score.length > 5 -> tooLong("score")
-            SU.isEmpty(type) -> notNull("type")
-            type.length > 20 -> tooLong("type")
-            null == typeId -> notNull("type_id")
-            typeId <= 0 -> invalid("type_id")
-            SU.isEmpty(dynasty) -> notNull("dynasty")
-            dynasty.length > 20 -> tooLong("dynasty")
-            null == dynastyId -> notNull("dynasty_id")
-            dynastyId <= 0 -> invalid("dynasty_id")
-            else -> null
+    fun saveBookChapter(obj: JsonObject) : String {
+        val table = DataTableUtil.getTable(DataTableEnum.BOOK_CHAPTER)
+            ?: throw IllegalArgumentException("database error: not found this table")
+        val sql = dataSave(obj,table)
+        return "INSERT INTO tt_book_chapter(`id`,`order`,`name`,`book_id`,`content`) VALUE $sql"
+    }
+
+    /**
+     * 保存多个古籍章节详情SQL
+     */
+    fun saveBookChapters(array: JsonArray) : String {
+        val table = DataTableUtil.getTable(DataTableEnum.BOOK_CHAPTER)
+            ?: throw IllegalArgumentException("database error: not found this table")
+        if (array.isEmpty)
+            throw IllegalArgumentException("can not find any request data")
+        var sql = "INSERT INTO tt_book_chapter(`id`,`order`,`name`,`book_id`,`content`) VALUE "
+        val size = array.size()
+        for (i in 0 until size) {
+            sql += dataSave(array.getJsonObject(i),table)
+            if (i != size.dec())
+                sql += ","
         }
-        if (null != error)
-            throw IllegalArgumentException(error)
-        if (null == count || count < 0) count = 0
-        if (null == free) free = false
-        if (null == offSale) offSale = false
-        val update = System.currentTimeMillis()
-        val id = ApiHandler.idBuilder.nextId()
-        return """
-            ($id,'$name','$auth','$image','$sImage','$intro','$guide','$guideAuth',
-            '$score','$type',$typeId,'$dynasty',$dynastyId,$count,$free,$offSale,$update)
-        """
+        return sql
+    }
+
+    /**
+     * 更新古籍数据
+     */
+    fun updateBook(obj: JsonObject) : String {
+        val table = DataTableUtil.getTable(DataTableEnum.BOOK)
+            ?: throw IllegalArgumentException("database error: not found this table")
+        return dataUpdate(obj,table)
+    }
+
+    /**
+     * 更新古籍章节数据
+     */
+    fun updateBookChapter(obj: JsonObject) : String {
+        val table = DataTableUtil.getTable(DataTableEnum.BOOK_CHAPTER)
+            ?: throw IllegalArgumentException("database error: not found this table")
+        return dataUpdate(obj,table)
     }
 
     /**
@@ -284,6 +401,43 @@ class SqlBuilder {
             sql += "AND `py` = '$py' "
         sql += "LIMIT ${if (page < 1) 0 else page.dec().times(row)},$row"
         return sql
+    }
+
+    /**
+     * 保存百家姓数据SQL
+     */
+    fun saveBjx(obj: JsonObject) : String {
+        val table = DataTableUtil.getTable(DataTableEnum.BJX)
+            ?: throw IllegalArgumentException("database error: not found this table")
+        val sql = dataSave(obj,table)
+        return "INSERT INTO tt_bjx(`id`,`name`,`py`,`src`,`update`) VALUE $sql"
+    }
+
+    /**
+     * 保存多个百家姓数据SQL
+     */
+    fun saveBjxS(array: JsonArray) : String {
+        val table = DataTableUtil.getTable(DataTableEnum.BJX)
+            ?: throw IllegalArgumentException("database error: not found this table")
+        if (array.isEmpty)
+            throw IllegalArgumentException("can not find any request data")
+        var sql = "INSERT INTO tt_bjx(`id`,`name`,`py`,`src`,`update`) VALUES "
+        val size = array.size()
+        for (i in 0 until size) {
+            sql += dataSave(array.getJsonObject(i),table)
+            if (i != size.dec())
+                sql += ","
+        }
+        return sql
+    }
+
+    /**
+     * 更新百家姓数据SQL
+     */
+    fun updateBjx(obj: JsonObject) : String {
+        val table = DataTableUtil.getTable(DataTableEnum.BJX)
+            ?: throw IllegalArgumentException("database error: not found this table")
+        return dataUpdate(obj, table)
     }
 
     /**
@@ -372,6 +526,80 @@ class SqlBuilder {
             null
         else
             "SELECT `id`,`order`,`pid`,`title` FROM tt_buddhist_chapter WHERE pid = $id ORDER BY `order`"
+    }
+
+    /**
+     * 保存章节数据SQL
+     */
+    fun saveBuddhist(obj: JsonObject) : String {
+        val table = DataTableUtil.getTable(DataTableEnum.BUDDHIST)
+            ?: throw IllegalArgumentException("database error: not found this table")
+        val sql = dataSave(obj,table)
+        return "INSERT INTO tt_buddhist(`id`,`name`,`auth`,`image`,`type`,`type_id`,`intro`,`update`) VALUE $sql"
+    }
+
+    /**
+     * 保存多个章节数据SQL
+     */
+    fun saveBuddhists(array: JsonArray) : String {
+        val table = DataTableUtil.getTable(DataTableEnum.BUDDHIST)
+            ?: throw IllegalArgumentException("database error: not found this table")
+        if (array.isEmpty)
+            throw IllegalArgumentException("can not find any request data")
+        var sql = "INSERT INTO tt_buddhist(`id`,`name`,`auth`,`image`,`type`,`type_id`,`intro`,`update`) VALUES "
+        val size = array.size()
+        for (i in 0 until size) {
+            sql += dataSave(array.getJsonObject(i),table)
+            if (i != size.dec())
+                sql += ","
+        }
+        return sql
+    }
+
+    /**
+     * 保存佛经章节数据SQL
+     */
+    fun saveBuddhistChapter(obj: JsonObject) : String {
+        val table = DataTableUtil.getTable(DataTableEnum.BUDDHIST_CHAPTER)
+            ?: throw IllegalArgumentException("database error: not found this table")
+        val sql = dataSave(obj,table)
+        return "INSERT INTO tt_bjx(`id`,`pid`,`order`,`title`,`src`,`update`) VALUE $sql"
+    }
+
+    /**
+     * 保存多个佛经章节数据SQL
+     */
+    fun saveBuddhistChapters(array: JsonArray) : String {
+        val table = DataTableUtil.getTable(DataTableEnum.BUDDHIST_CHAPTER)
+            ?: throw IllegalArgumentException("database error: not found this table")
+        if (array.isEmpty)
+            throw IllegalArgumentException("can not find any request data")
+        var sql = "INSERT INTO tt_bjx(`id`,`pid`,`order`,`title`,`src`,`update`) VALUES "
+        val size = array.size()
+        for (i in 0 until size) {
+            sql += dataSave(array.getJsonObject(i),table)
+            if (i != size.dec())
+                sql += ","
+        }
+        return sql
+    }
+
+    /**
+     * 更新佛经数据SQL
+     */
+    fun updateBuddhist(obj: JsonObject) : String {
+        val table = DataTableUtil.getTable(DataTableEnum.BUDDHIST)
+            ?: throw IllegalArgumentException("database error: not found this table")
+        return dataUpdate(obj, table)
+    }
+
+    /**
+     * 更新佛经章节数据SQL
+     */
+    fun updateBuddhistChapter(obj: JsonObject) : String {
+        val table = DataTableUtil.getTable(DataTableEnum.BUDDHIST_CHAPTER)
+            ?: throw IllegalArgumentException("database error: not found this table")
+        return dataUpdate(obj, table)
     }
 
     private fun tooLong(name: String) : String = "param $name is too long."

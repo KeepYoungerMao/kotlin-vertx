@@ -1,6 +1,7 @@
 package com.mao.handler
 
-import com.mao.data.PropertiesReader
+import com.mao.data.DataTable
+import com.mao.data.FileReader
 import com.mao.data.Response
 import com.mao.service.DataOperation
 import com.mao.service.ErrorHandler
@@ -28,7 +29,7 @@ import io.vertx.ext.web.handler.BodyHandler
  */
 class ApiHandler : AbstractVerticle() {
 
-    private val server = PropertiesReader.readServer("/config/server.properties")
+    private val server = FileReader.readServer("/config/server.properties")
     private val dataOperation = DataOperation.created()
 
     companion object {
@@ -40,6 +41,7 @@ class ApiHandler : AbstractVerticle() {
                 .put("password","root")
         )
         val idBuilder: SnowFlake = SnowFlake(1,1)
+        val dataTable: MutableList<DataTable> = FileReader.readTable("/config/data_table.json")
     }
 
     override fun start() {

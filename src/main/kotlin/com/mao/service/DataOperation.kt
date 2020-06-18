@@ -57,9 +57,7 @@ class DataOperationImpl : DataOperation {
                         OperationType.EDIT -> {
                             when (methodEnum) {
                                 DataMethod.SRC -> updateBook(ctx)
-                                DataMethod.LIST -> updateBooks(ctx)
                                 DataMethod.CHAPTER -> updateBookChapter(ctx)
-                                DataMethod.CHAPTERS -> updateBookChapters(ctx)
                                 else -> ctx.response().end(methodError(method))
                             }
                         }
@@ -95,7 +93,6 @@ class DataOperationImpl : DataOperation {
                         OperationType.EDIT -> {
                             when (methodEnum) {
                                 DataMethod.SRC -> updateBjx(ctx)
-                                DataMethod.LIST -> updateBjxS(ctx)
                                 else -> ctx.response().end(methodError(method))
                             }
                         }
@@ -134,9 +131,7 @@ class DataOperationImpl : DataOperation {
                         OperationType.EDIT -> {
                             when (methodEnum) {
                                 DataMethod.SRC -> updateBuddhist(ctx)
-                                DataMethod.LIST -> updateBuddhists(ctx)
                                 DataMethod.CHAPTER -> updateBuddhistChapter(ctx)
-                                DataMethod.CHAPTERS -> updateBuddhistChapters(ctx)
                                 else -> ctx.response().end(methodError(method))
                             }
                         }
@@ -173,7 +168,6 @@ class DataOperationImpl : DataOperation {
                         OperationType.EDIT -> {
                             when (methodEnum) {
                                 DataMethod.SRC -> updateLive(ctx)
-                                DataMethod.LIST -> updateLives(ctx)
                                 else -> ctx.response().end(methodError(method))
                             }
                         }
@@ -208,7 +202,6 @@ class DataOperationImpl : DataOperation {
                         OperationType.EDIT -> {
                             when (methodEnum) {
                                 DataMethod.SRC -> updateMovie(ctx)
-                                DataMethod.LIST -> updateMovies(ctx)
                                 else -> ctx.response().end(methodError(method))
                             }
                         }
@@ -243,7 +236,6 @@ class DataOperationImpl : DataOperation {
                         OperationType.EDIT -> {
                             when (methodEnum) {
                                 DataMethod.SRC -> updatePic(ctx)
-                                DataMethod.LIST -> updatePics(ctx)
                                 else -> ctx.response().end(methodError(method))
                             }
                         }
@@ -342,64 +334,124 @@ class DataOperationImpl : DataOperation {
      * 接收body参数，使用JsonObject接收
      */
     private fun saveBook(ctx: RoutingContext) {
+        var sql: String? = null
         try {
-            val sql = sqlBuilder.saveBook(ctx.bodyAsJson)
-            sqlResult(ctx, sql, single = true, commit = true)
+            sql = sqlBuilder.saveBook(ctx.bodyAsJson)
         } catch (e: Exception) {
             ctx.response().end(error(e.message?:"request error"))
         }
+        if (null != sql)
+            sqlResult(ctx, sql, single = true, commit = true)
     }
 
     /**
      * 保存多个古籍数据
+     * 接收body参数，使用JsonArray接收
      */
     private fun saveBooks(ctx: RoutingContext) {
+        var sql: String? = null
         try {
-            val sql = sqlBuilder.saveBooks(ctx.bodyAsJsonArray)
-            sqlResult(ctx, sql, single = false, commit = true)
+            sql = sqlBuilder.saveBooks(ctx.bodyAsJsonArray)
         } catch (e: Exception) {
             ctx.response().end(error(e.message?:"request error"))
         }
+        if (null != sql)
+            sqlResult(ctx, sql, single = false, commit = true)
     }
+
+    /**
+     * 保存古籍章节数据
+     * 接收body参数，使用JsonObject接收
+     */
     private fun saveBookChapter(ctx: RoutingContext) {
-        println(ctx.bodyAsJson)
-        ctx.response().end(permission("on building"))
+        var sql: String? = null
+        try {
+            sql = sqlBuilder.saveBookChapter(ctx.bodyAsJson)
+        } catch (e: Exception) {
+            ctx.response().end(error(e.message?:"request error"))
+        }
+        if (null != sql)
+            sqlResult(ctx, sql, single = true, commit = true)
     }
+
+    /**
+     * 保存多个古籍章节数据
+     * 接收body参数，使用JsonArray接收
+     */
     private fun saveBookChapters(ctx: RoutingContext) {
-        println(ctx.bodyAsJsonArray)
-        ctx.response().end(permission("on building"))
+        var sql: String? = null
+        try {
+            sql = sqlBuilder.saveBookChapters(ctx.bodyAsJsonArray)
+        } catch (e: Exception) {
+            ctx.response().end(error(e.message?:"request error"))
+        }
+        if (null != sql)
+            sqlResult(ctx, sql, single = false, commit = true)
     }
+
+    /**
+     * 更新古籍数据
+     * 接收body参数，使用JsonObject接收
+     * 不支持多个数据同时更新
+     */
     private fun updateBook(ctx: RoutingContext) {
-        println(ctx.bodyAsJson)
-        ctx.response().end(permission("on building"))
+        var sql: String? = null
+        try {
+            sql = sqlBuilder.updateBook(ctx.bodyAsJson)
+        } catch (e: Exception) {
+            ctx.response().end(error(e.message?:"request error"))
+        }
+        if (null != sql)
+            sqlResult(ctx, sql, single = true, commit = true)
     }
-    private fun updateBooks(ctx: RoutingContext) {
-        println(ctx.bodyAsJsonArray)
-        ctx.response().end(permission("on building"))
-    }
+
+    /**
+     * 更新古籍章节数据
+     * 接收body参数，使用JsonObject接收
+     * 不支持多个数据同时更新
+     */
     private fun updateBookChapter(ctx: RoutingContext) {
-        println(ctx.bodyAsJson)
-        ctx.response().end(permission("on building"))
+        var sql: String? = null
+        try {
+            sql = sqlBuilder.updateBookChapter(ctx.bodyAsJson)
+        } catch (e: Exception) {
+            ctx.response().end(error(e.message?:"request error"))
+        }
+        if (null != sql)
+            sqlResult(ctx, sql, single = true, commit = true)
     }
-    private fun updateBookChapters(ctx: RoutingContext) {
-        println(ctx.bodyAsJsonArray)
-        ctx.response().end(permission("on building"))
-    }
+
+    /**
+     * 删除古籍数据，接收古籍id
+     * 暂时不开放
+     */
     private fun deleteBook(ctx: RoutingContext) {
-        //TODO 暂未开放
-        ctx.response().end(permission("no permission to delete data"))
+        ctx.response().end(permission("no permission to delete book data"))
     }
+
+    /**
+     * 删除多个古籍数据，接收古籍id拼接字符串
+     * 暂时不开放
+     */
     private fun deleteBooks(ctx: RoutingContext) {
-        //TODO 暂未开放
-        ctx.response().end(permission("no permission to delete data"))
+        ctx.response().end(permission("no permission to delete book data"))
     }
+
+    /**
+     * 删除古籍章节数据，接收章节id
+     * 暂时不开放
+     */
     private fun deleteBookChapter(ctx: RoutingContext) {
-        //TODO 暂未开放
-        ctx.response().end(permission("no permission to delete data"))
+        ctx.response().end(permission("no permission to delete book chapter data"))
     }
+
+    /**
+     * 删除多个古籍章节数据，接收删除模式
+     * 支持根据古籍id删除，支持根据id拼接字符串删除
+     * 暂时不开放
+     */
     private fun deleteBookChapters(ctx: RoutingContext) {
-        //TODO 暂未开放
-        ctx.response().end(permission("no permission to delete data"))
+        ctx.response().end(permission("no permission to delete book chapter data"))
     }
 
     /**
@@ -437,17 +489,66 @@ class DataOperationImpl : DataOperation {
         val sql = sqlBuilder.bjxPage(ctx.request().params())
         sqlResult(ctx, sql, single = false, commit = false)
     }
-    private fun saveBjx(ctx: RoutingContext) { ctx.response().end(ok("building...")) }
-    private fun saveBjxS(ctx: RoutingContext) { ctx.response().end(ok("building...")) }
-    private fun updateBjx(ctx: RoutingContext) { ctx.response().end(ok("building...")) }
-    private fun updateBjxS(ctx: RoutingContext) { ctx.response().end(ok("building...")) }
-    private fun deleteBjx(ctx: RoutingContext) {
-        //TODO 暂未开放
-        ctx.response().end(permission("no permission to delete data"))
+
+    /**
+     * 保存百家姓数据
+     * 接收body参数，使用JsonObject接收
+     */
+    private fun saveBjx(ctx: RoutingContext) {
+        var sql: String? = null
+        try {
+            sql = sqlBuilder.saveBjx(ctx.bodyAsJson)
+        } catch (e: Exception) {
+            ctx.response().end(error(e.message?:"request error"))
+        }
+        if (null != sql)
+            sqlResult(ctx, sql, single = true, commit = true)
     }
+
+    /**
+     * 保存多个百家姓数据
+     * 接收body参数，使用JsonArray接收
+     */
+    private fun saveBjxS(ctx: RoutingContext) {
+        var sql: String? = null
+        try {
+            sql = sqlBuilder.saveBjxS(ctx.bodyAsJsonArray)
+        } catch (e: Exception) {
+            ctx.response().end(error(e.message?:"request error"))
+        }
+        if (null != sql)
+            sqlResult(ctx, sql, single = false, commit = true)
+    }
+
+    /**
+     * 更新百家姓数据
+     * 接收body参数，使用JsonObject接收
+     */
+    private fun updateBjx(ctx: RoutingContext) {
+        var sql: String? = null
+        try {
+            sql = sqlBuilder.updateBjx(ctx.bodyAsJson)
+        } catch (e: Exception) {
+            ctx.response().end(error(e.message?:"request error"))
+        }
+        if (null != sql)
+            sqlResult(ctx, sql, single = true, commit = true)
+    }
+
+    /**
+     * 删除百家姓数据，接收百家姓id
+     * 暂时不开放
+     */
+    private fun deleteBjx(ctx: RoutingContext) {
+        ctx.response().end(permission("no permission to delete bjx data"))
+    }
+
+    /**
+     * 删除多个百家姓数据，接收百家姓id拼接字符串
+     * 暂时不开放
+     */
     private fun deleteBjxS(ctx: RoutingContext) {
-        //TODO 暂未开放
-        ctx.response().end(permission("no permission to delete data"))
+        ctx.response().end(permission("no permission to delete bjx data"))
     }
 
     /**
@@ -519,29 +620,125 @@ class DataOperationImpl : DataOperation {
     private fun buddhistClassify(ctx: RoutingContext) {
         sqlResult(ctx,sqlBuilder.dataDict(DataType.BUDDHIST),single = false,commit = false)
     }
-    private fun saveBuddhist(ctx: RoutingContext) { ctx.response().end(ok("building...")) }
-    private fun saveBuddhists(ctx: RoutingContext) { ctx.response().end(ok("building...")) }
-    private fun saveBuddhistChapter(ctx: RoutingContext) { ctx.response().end(ok("building...")) }
-    private fun saveBuddhistChapters(ctx: RoutingContext) { ctx.response().end(ok("building...")) }
-    private fun updateBuddhist(ctx: RoutingContext) { ctx.response().end(ok("building...")) }
-    private fun updateBuddhists(ctx: RoutingContext) { ctx.response().end(ok("building...")) }
-    private fun updateBuddhistChapter(ctx: RoutingContext) { ctx.response().end(ok("building...")) }
-    private fun updateBuddhistChapters(ctx: RoutingContext) { ctx.response().end(ok("building...")) }
+
+    /**
+     * 保存佛经数据
+     */
+    private fun saveBuddhist(ctx: RoutingContext) {
+        var sql: String? = null
+        try {
+            sql = sqlBuilder.saveBuddhist(ctx.bodyAsJson)
+        } catch (e: Exception) {
+            ctx.response().end(error(e.message?:"request error"))
+        }
+        if (null != sql)
+            sqlResult(ctx, sql, single = true, commit = true)
+    }
+
+    /**
+     * 保存多个佛经数据
+     */
+    private fun saveBuddhists(ctx: RoutingContext) {
+        var sql: String? = null
+        try {
+            sql = sqlBuilder.saveBuddhists(ctx.bodyAsJsonArray)
+        } catch (e: Exception) {
+            ctx.response().end(error(e.message?:"request error"))
+        }
+        if (null != sql)
+            sqlResult(ctx, sql, single = false, commit = true)
+    }
+
+    /**
+     * 保存佛经章节数据
+     */
+    private fun saveBuddhistChapter(ctx: RoutingContext) {
+        var sql: String? = null
+        try {
+            sql = sqlBuilder.saveBuddhistChapter(ctx.bodyAsJson)
+        } catch (e: Exception) {
+            ctx.response().end(error(e.message?:"request error"))
+        }
+        if (null != sql)
+            sqlResult(ctx, sql, single = true, commit = true)
+    }
+
+    /**
+     * 保存多个佛经章节数据
+     */
+    private fun saveBuddhistChapters(ctx: RoutingContext) {
+        var sql: String? = null
+        try {
+            sql = sqlBuilder.saveBuddhistChapters(ctx.bodyAsJsonArray)
+        } catch (e: Exception) {
+            ctx.response().end(error(e.message?:"request error"))
+        }
+        if (null != sql)
+            sqlResult(ctx, sql, single = false, commit = true)
+    }
+
+    /**
+     * 更新佛经数据
+     */
+    private fun updateBuddhist(ctx: RoutingContext) {
+        var sql: String? = null
+        try {
+            sql = sqlBuilder.updateBuddhist(ctx.bodyAsJson)
+        } catch (e: Exception) {
+            ctx.response().end(error(e.message?:"request error"))
+        }
+        if (null != sql)
+            sqlResult(ctx, sql, single = true, commit = true)
+    }
+
+    /**
+     * 更新佛经章节数据
+     */
+    private fun updateBuddhistChapter(ctx: RoutingContext) {
+        var sql: String? = null
+        try {
+            sql = sqlBuilder.updateBuddhistChapter(ctx.bodyAsJson)
+        } catch (e: Exception) {
+            ctx.response().end(error(e.message?:"request error"))
+        }
+        if (null != sql)
+            sqlResult(ctx, sql, single = true, commit = true)
+    }
+
+    /**
+     * 删除佛经数据
+     * 接收佛经id
+     * 暂时不开放
+     */
     private fun deleteBuddhist(ctx: RoutingContext) {
-        //TODO 暂未开放
-        ctx.response().end(permission("no permission to delete data"))
+        ctx.response().end(permission("no permission to delete buddhist data"))
     }
+
+    /**
+     * 删除多个佛经数据
+     * 接收佛经id拼接字符串
+     * 暂时不开放
+     */
     private fun deleteBuddhists(ctx: RoutingContext) {
-        //TODO 暂未开放
-        ctx.response().end(permission("no permission to delete data"))
+        ctx.response().end(permission("no permission to delete buddhist data"))
     }
+
+    /**
+     * 删除佛经章节数据
+     * 接收佛经章节id
+     * 暂时不开放
+     */
     private fun deleteBuddhistChapter(ctx: RoutingContext) {
-        //TODO 暂未开放
-        ctx.response().end(permission("no permission to delete data"))
+        ctx.response().end(permission("no permission to delete buddhist chapter data"))
     }
+
+    /**
+     * 删除多个佛经章节数据
+     * 接收删除模式：接收佛经章节id拼接字符串 或 佛经id
+     * 暂时不开放
+     */
     private fun deleteBuddhistChapters(ctx: RoutingContext) {
-        //TODO 暂未开放
-        ctx.response().end(permission("no permission to delete data"))
+        ctx.response().end(permission("no permission to delete buddhist chapter data"))
     }
 
     private fun liveSrc(ctx: RoutingContext) { ctx.response().end(ok("building...")) }
@@ -551,14 +748,11 @@ class DataOperationImpl : DataOperation {
     private fun saveLive(ctx: RoutingContext) { ctx.response().end(ok("building...")) }
     private fun saveLives(ctx: RoutingContext) { ctx.response().end(ok("building...")) }
     private fun updateLive(ctx: RoutingContext) { ctx.response().end(ok("building...")) }
-    private fun updateLives(ctx: RoutingContext) { ctx.response().end(ok("building...")) }
     private fun deleteLive(ctx: RoutingContext) {
-        //TODO 暂未开放
-        ctx.response().end(permission("no permission to delete data"))
+        ctx.response().end(permission("no permission to delete live data"))
     }
     private fun deleteLives(ctx: RoutingContext) {
-        //TODO 暂未开放
-        ctx.response().end(permission("no permission to delete data"))
+        ctx.response().end(permission("no permission to delete live data"))
     }
 
     private fun movieSrc(ctx: RoutingContext) { ctx.response().end(ok("building...")) }
@@ -568,14 +762,11 @@ class DataOperationImpl : DataOperation {
     private fun saveMovie(ctx: RoutingContext) { ctx.response().end(ok("building...")) }
     private fun saveMovies(ctx: RoutingContext) { ctx.response().end(ok("building...")) }
     private fun updateMovie(ctx: RoutingContext) { ctx.response().end(ok("building...")) }
-    private fun updateMovies(ctx: RoutingContext) { ctx.response().end(ok("building...")) }
     private fun deleteMovie(ctx: RoutingContext) {
-        //TODO 暂未开放
-        ctx.response().end(permission("no permission to delete data"))
+        ctx.response().end(permission("no permission to delete movie data"))
     }
     private fun deleteMovies(ctx: RoutingContext) {
-        //TODO 暂未开放
-        ctx.response().end(permission("no permission to delete data"))
+        ctx.response().end(permission("no permission to delete movie data"))
     }
 
     private fun picSrc(ctx: RoutingContext) { ctx.response().end(ok("building...")) }
@@ -585,18 +776,17 @@ class DataOperationImpl : DataOperation {
     private fun savePic(ctx: RoutingContext) { ctx.response().end(ok("building...")) }
     private fun savePics(ctx: RoutingContext) { ctx.response().end(ok("building...")) }
     private fun updatePic(ctx: RoutingContext) { ctx.response().end(ok("building...")) }
-    private fun updatePics(ctx: RoutingContext) { ctx.response().end(ok("building...")) }
     private fun deletePic(ctx: RoutingContext) {
-        //TODO 暂未开放
-        ctx.response().end(permission("no permission to delete data"))
+        ctx.response().end(permission("no permission to delete pic data"))
     }
     private fun deletePics(ctx: RoutingContext) {
-        //TODO 暂未开放
-        ctx.response().end(permission("no permission to delete data"))
+        ctx.response().end(permission("no permission to delete pic data"))
     }
 
+    //=================================== SQL execute ================================================
+
     /**
-     * 同一执行sql语句，并操作RoutingContext返回数据
+     * 统一执行sql语句，并操作RoutingContext返回数据
      * 执行sql语句也是同一调用execute方法
      * @param ctx RoutingContext上下文
      * @param sql 执行的SQL语句
@@ -612,6 +802,8 @@ class DataOperationImpl : DataOperation {
             }
         } })
     }
+
+    //========================= error data response ===============================================
 
     private fun operationError(operation: String) : String = err("p1",operation)
     private fun dataError(data: String) : String = err("p2",data)
