@@ -1,4 +1,4 @@
-package com.mao.handler
+package com.mao.server
 
 import com.mao.data.DataTable
 import com.mao.data.FileReader
@@ -27,7 +27,7 @@ import io.vertx.ext.web.handler.BodyHandler
  * 使用BodyHandler：
  * BodyHandler默认不会将表单参数合并到body主体中
  */
-class ApiHandler : AbstractVerticle() {
+class ApiServer : AbstractVerticle() {
 
     private val server = FileReader.readServer("/config/server.properties")
     private val dataOperation = DataOperation.created()

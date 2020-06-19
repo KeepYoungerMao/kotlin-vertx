@@ -1,11 +1,14 @@
 package com.mao.service
 
+import com.mao.data.DataTableEnum
 import com.mao.sql.Query
 import com.mao.data.Response
 import com.mao.enum.DataMethod
 import com.mao.enum.DataType
 import com.mao.enum.OperationType
 import com.mao.enum.EnumOperation
+import com.mao.sql.SqlBuilder
+import com.mao.sql.SqlBuilderExecute
 import io.vertx.core.Handler
 import io.vertx.ext.web.RoutingContext
 import java.lang.Exception
@@ -21,7 +24,7 @@ interface DataOperation : Handler<RoutingContext> {
 class DataOperationImpl : DataOperation {
 
     private val queryHandler: Query = Query()
-    private val sqlBuilder: SqlBuilder = SqlBuilder()
+    private val sqlBuilder: SqlBuilder = SqlBuilderExecute()
 
     override fun handle(ctx: RoutingContext) {
         val operation = ctx.pathParam("operation")
@@ -256,696 +259,357 @@ class DataOperationImpl : DataOperation {
         }
     }
 
-    /**
-     * 通过古籍id查询古籍详情
-     */
+    //通过古籍id查询古籍详情
     private fun bookSrc(ctx: RoutingContext) {
-        val sql = sqlBuilder.bookSrc(ctx.request().getParam("id"))
-        if (sql == null)
-            ctx.response().end(error("invalid param id."))
-        else {
-            sqlResult(ctx, sql, single = true, commit = false)
-        }
+        dataExecute(ctx,single = true,commit = false,args = ctx.request().getParam("id")) { sqlBuilder.bookSrc(it) }
     }
 
-    /**
-     * 查询古籍列表，搜索查询
-     * 支持参数：
-     * name：古籍名称
-     * auth：古籍作者
-     */
+    //查询古籍列表，搜索查询
     private fun bookList(ctx: RoutingContext) {
-        val sql = sqlBuilder.bookList(ctx.request().params())
-        if (null == sql)
-            ctx.response().end(ok(emptyList<Any>()))
-        else
-            sqlResult(ctx, sql, single = false, commit = false)
+        dataExecute(ctx, single = false, commit = false, args = ctx.request().params()) { sqlBuilder.bookList(it) }
     }
 
-    /**
-     * 查询古籍列表，分类查询，分页查询
-     * 支持参数：
-     * page：页码
-     * row：每页数量
-     * type：估计类型
-     * dynasty：古籍朝代
-     * free：是否免费
-     * off_sale：是否下架
-     */
+    //查询古籍列表，分类查询，分页查询
     private fun bookPage(ctx: RoutingContext) {
-        val sql = sqlBuilder.bookPage(ctx.request().params())
-        sqlResult(ctx, sql, single = false, commit = false)
+        dataExecute(ctx, single = false, commit = false, args = ctx.request().params()) { sqlBuilder.bookPage(it) }
     }
 
-    /**
-     * 通过id查询古籍章节详情
-     * id错误返回错误信息
-     */
+    //通过id查询古籍章节详情
     private fun bookChapter(ctx: RoutingContext) {
-        val sql = sqlBuilder.bookChapter(ctx.request().getParam("id"))
-        if (null == sql)
-            ctx.response().end(error("invalid param id."))
-        else
-            sqlResult(ctx, sql, single = true, commit = false)
+        dataExecute(ctx, single = true, commit = false, args = ctx.request().getParam("id")) { sqlBuilder.bookChapter(it) }
     }
 
-    /**
-     * 通过古籍id查询该古籍下所有章节列表
-     * 章节列表不包含章节详情内容
-     * 古籍id错误返回错误信息
-     */
+    //通过古籍id查询该古籍下所有章节列表
     private fun bookChapters(ctx: RoutingContext) {
-        val sql = sqlBuilder.bookChapters(ctx.request().getParam("id"))
-        if (null == sql)
-            ctx.response().end(error("invalid param id."))
-        else
-            sqlResult(ctx, sql, single = false, commit = false)
+        dataExecute(ctx, single = false, commit = false, args = ctx.request().getParam("id")) { sqlBuilder.bookChapters(it) }
     }
 
-    /**
-     * 返回古籍分类信息
-     */
+    //返回古籍分类信息
     private fun bookClassify(ctx: RoutingContext) {
         sqlResult(ctx,sqlBuilder.dataDict(DataType.BOOK),single = false,commit = false)
     }
 
-    /**
-     * 保存古籍数据
-     * 接收body参数，使用JsonObject接收
-     */
+    //保存古籍数据
     private fun saveBook(ctx: RoutingContext) {
-        var sql: String? = null
-        try {
-            sql = sqlBuilder.saveBook(ctx.bodyAsJson)
-        } catch (e: Exception) {
-            ctx.response().end(error(e.message?:"request error"))
-        }
-        if (null != sql)
-            sqlResult(ctx, sql, single = true, commit = true)
+        dataExecute(ctx, single = true, commit = true, args = ctx.bodyAsJson) { sqlBuilder.saveBook(it) }
     }
 
-    /**
-     * 保存多个古籍数据
-     * 接收body参数，使用JsonArray接收
-     */
+    //保存多个古籍数据
     private fun saveBooks(ctx: RoutingContext) {
-        var sql: String? = null
-        try {
-            sql = sqlBuilder.saveBooks(ctx.bodyAsJsonArray)
-        } catch (e: Exception) {
-            ctx.response().end(error(e.message?:"request error"))
-        }
-        if (null != sql)
-            sqlResult(ctx, sql, single = false, commit = true)
+        dataExecute(ctx, single = false, commit = true, args = ctx.bodyAsJsonArray) { sqlBuilder.saveBooks(it) }
     }
 
-    /**
-     * 保存古籍章节数据
-     * 接收body参数，使用JsonObject接收
-     */
+    //保存古籍章节数据
     private fun saveBookChapter(ctx: RoutingContext) {
-        var sql: String? = null
-        try {
-            sql = sqlBuilder.saveBookChapter(ctx.bodyAsJson)
-        } catch (e: Exception) {
-            ctx.response().end(error(e.message?:"request error"))
-        }
-        if (null != sql)
-            sqlResult(ctx, sql, single = true, commit = true)
+        dataExecute(ctx, single = true, commit = true, args = ctx.bodyAsJson) { sqlBuilder.saveBookChapter(it) }
     }
 
-    /**
-     * 保存多个古籍章节数据
-     * 接收body参数，使用JsonArray接收
-     */
+    //保存多个古籍章节数据
     private fun saveBookChapters(ctx: RoutingContext) {
-        var sql: String? = null
-        try {
-            sql = sqlBuilder.saveBookChapters(ctx.bodyAsJsonArray)
-        } catch (e: Exception) {
-            ctx.response().end(error(e.message?:"request error"))
-        }
-        if (null != sql)
-            sqlResult(ctx, sql, single = false, commit = true)
+        dataExecute(ctx, single = false, commit = true, args = ctx.bodyAsJsonArray) { sqlBuilder.saveBookChapters(it) }
     }
 
-    /**
-     * 更新古籍数据
-     * 接收body参数，使用JsonObject接收
-     * 不支持多个数据同时更新
-     */
+    //更新古籍数据
     private fun updateBook(ctx: RoutingContext) {
-        var sql: String? = null
-        try {
-            sql = sqlBuilder.updateBook(ctx.bodyAsJson)
-        } catch (e: Exception) {
-            ctx.response().end(error(e.message?:"request error"))
-        }
-        if (null != sql)
-            sqlResult(ctx, sql, single = true, commit = true)
+        dataExecute(ctx, single = true, commit = true, args = ctx.bodyAsJson) { sqlBuilder.updateBook(it) }
     }
 
-    /**
-     * 更新古籍章节数据
-     * 接收body参数，使用JsonObject接收
-     * 不支持多个数据同时更新
-     */
+    //更新古籍章节数据
     private fun updateBookChapter(ctx: RoutingContext) {
-        var sql: String? = null
-        try {
-            sql = sqlBuilder.updateBookChapter(ctx.bodyAsJson)
-        } catch (e: Exception) {
-            ctx.response().end(error(e.message?:"request error"))
-        }
-        if (null != sql)
-            sqlResult(ctx, sql, single = true, commit = true)
+        dataExecute(ctx, single = true, commit = true, args = ctx.bodyAsJson) { sqlBuilder.updateBookChapter(it) }
     }
 
-    /**
-     * 删除古籍数据，接收古籍id
-     * 暂时不开放
-     */
+    //删除古籍数据，接收古籍id
     private fun deleteBook(ctx: RoutingContext) {
-        ctx.response().end(permission("no permission to delete book data"))
+        noOpen(ctx,DataTableEnum.BOOK)
     }
 
-    /**
-     * 删除多个古籍数据，接收古籍id拼接字符串
-     * 暂时不开放
-     */
+    //删除多个古籍数据，接收古籍id拼接字符串
     private fun deleteBooks(ctx: RoutingContext) {
-        ctx.response().end(permission("no permission to delete book data"))
+        noOpen(ctx,DataTableEnum.BOOK)
     }
 
-    /**
-     * 删除古籍章节数据，接收章节id
-     * 暂时不开放
-     */
+    //删除古籍章节数据，接收章节id
     private fun deleteBookChapter(ctx: RoutingContext) {
-        ctx.response().end(permission("no permission to delete book chapter data"))
+        noOpen(ctx,DataTableEnum.BOOK_CHAPTER)
     }
 
-    /**
-     * 删除多个古籍章节数据，接收删除模式
-     * 支持根据古籍id删除，支持根据id拼接字符串删除
-     * 暂时不开放
-     */
+    //删除多个古籍章节数据，接收删除模式
     private fun deleteBookChapters(ctx: RoutingContext) {
-        ctx.response().end(permission("no permission to delete book chapter data"))
+        noOpen(ctx,DataTableEnum.BOOK_CHAPTER)
     }
 
-    /**
-     * 根据id查询百家姓详情
-     * id错误返回错误信息
-     */
+    //根据id查询百家姓详情
     private fun bjxSrc(ctx: RoutingContext) {
-        val sql = sqlBuilder.bjxSrc(ctx.request().getParam("id"))
-        if (null == sql)
-            ctx.response().end(error("invalid param id."))
-        else
-            sqlResult(ctx, sql, single = true, commit = false)
+        dataExecute(ctx, single = true, commit = false, args = ctx.request().getParam("id")) { sqlBuilder.bjxSrc(it) }
     }
 
-    /**
-     * 检索查询百家姓列表
-     * 检索参数：
-     * name：百家姓名称
-     */
+    //检索查询百家姓列表
     private fun bjxList(ctx: RoutingContext) {
-        val sql = sqlBuilder.bjxList(ctx.request().params())
-        if (null == sql)
-            ctx.response().end(ok(emptyList<Any>()))
-        else
-            sqlResult(ctx, sql, single = false, commit = false)
+        dataExecute(ctx, single = false, commit = false, args = ctx.request().params()) { sqlBuilder.bjxList(it) }
     }
 
-    /**
-     * 分页查询百家姓列表
-     * 分页参数：
-     * page、row
-     * py：百家姓首字母：A-Z
-     */
+    //分页查询百家姓列表
     private fun bjxPage(ctx: RoutingContext) {
-        val sql = sqlBuilder.bjxPage(ctx.request().params())
-        sqlResult(ctx, sql, single = false, commit = false)
+        dataExecute(ctx, single = false, commit = false, args = ctx.request().params()) { sqlBuilder.bjxPage(it) }
     }
 
-    /**
-     * 保存百家姓数据
-     * 接收body参数，使用JsonObject接收
-     */
+    //保存百家姓数据
     private fun saveBjx(ctx: RoutingContext) {
-        var sql: String? = null
-        try {
-            sql = sqlBuilder.saveBjx(ctx.bodyAsJson)
-        } catch (e: Exception) {
-            ctx.response().end(error(e.message?:"request error"))
-        }
-        if (null != sql)
-            sqlResult(ctx, sql, single = true, commit = true)
+        dataExecute(ctx, single = true, commit = true, args = ctx.bodyAsJson) { sqlBuilder.saveBjx(it) }
     }
 
-    /**
-     * 保存多个百家姓数据
-     * 接收body参数，使用JsonArray接收
-     */
+    //保存多个百家姓数据
     private fun saveBjxS(ctx: RoutingContext) {
-        var sql: String? = null
-        try {
-            sql = sqlBuilder.saveBjxS(ctx.bodyAsJsonArray)
-        } catch (e: Exception) {
-            ctx.response().end(error(e.message?:"request error"))
-        }
-        if (null != sql)
-            sqlResult(ctx, sql, single = false, commit = true)
+        dataExecute(ctx, single = false, commit = true, args = ctx.bodyAsJsonArray) { sqlBuilder.saveBjxS(it) }
     }
 
-    /**
-     * 更新百家姓数据
-     * 接收body参数，使用JsonObject接收
-     */
+    //更新百家姓数据
     private fun updateBjx(ctx: RoutingContext) {
-        var sql: String? = null
-        try {
-            sql = sqlBuilder.updateBjx(ctx.bodyAsJson)
-        } catch (e: Exception) {
-            ctx.response().end(error(e.message?:"request error"))
-        }
-        if (null != sql)
-            sqlResult(ctx, sql, single = true, commit = true)
+        dataExecute(ctx, single = true, commit = true, args = ctx.bodyAsJson) { sqlBuilder.updateBjx(it) }
     }
 
-    /**
-     * 删除百家姓数据，接收百家姓id
-     * 暂时不开放
-     */
+    //删除百家姓数据，接收百家姓id
     private fun deleteBjx(ctx: RoutingContext) {
-        ctx.response().end(permission("no permission to delete bjx data"))
+        noOpen(ctx,DataTableEnum.BJX)
     }
 
-    /**
-     * 删除多个百家姓数据，接收百家姓id拼接字符串
-     * 暂时不开放
-     */
+    //删除多个百家姓数据，接收百家姓id拼接字符串
     private fun deleteBjxS(ctx: RoutingContext) {
-        ctx.response().end(permission("no permission to delete bjx data"))
+        noOpen(ctx,DataTableEnum.BJX)
     }
 
-    /**
-     * 根据id查询佛经详情
-     * id错误返回错误信息
-     */
+    //根据id查询佛经详情
     private fun buddhistSrc(ctx: RoutingContext) {
-        val sql = sqlBuilder.buddhistSrc(ctx.request().getParam("id"))
-        if (null == sql)
-            ctx.response().end(error("invalid param id."))
-        else
-            sqlResult(ctx, sql, single = true, commit = false)
+        dataExecute(ctx, single = true, commit = false, args = ctx.request().getParam("id")) { sqlBuilder.buddhistSrc(it) }
     }
 
-    /**
-     * 检索佛经列表
-     * 检索参数：
-     * name：佛经名称
-     * auth：佛经作者
-     * 检索参数为空返回空集合
-     */
+    //检索佛经列表
     private fun buddhistList(ctx: RoutingContext) {
-        val sql = sqlBuilder.buddhistList(ctx.request().params())
-        if (null == sql)
-            ctx.response().end(ok(emptyList<Any>()))
-        else
-            sqlResult(ctx, sql, single = false, commit = false)
+        dataExecute(ctx, single = false, commit = false, args = ctx.request().params()) { sqlBuilder.buddhistList(it) }
     }
 
-    /**
-     * 分页查询佛经列表
-     * 分页参数：
-     * page、row
-     * type：佛经类型
-     */
+    //分页查询佛经列表
     private fun buddhistPage(ctx: RoutingContext) {
-        val sql = sqlBuilder.buddhistPage(ctx.request().params())
-        sqlResult(ctx, sql, single = false, commit = false)
+        dataExecute(ctx, single = false, commit = false, args = ctx.request().params()) { sqlBuilder.buddhistPage(it) }
     }
 
-    /**
-     * 根据id查询佛经章节详情
-     * id错误返回错误信息
-     */
+    //根据id查询佛经章节详情
     private fun buddhistChapter(ctx: RoutingContext) {
-        val sql = sqlBuilder.buddhistChapter(ctx.request().getParam("id"))
-        if (null == sql)
-            ctx.response().end(error("invalid param id."))
-        else
-            sqlResult(ctx, sql, single = true, commit = false)
+        dataExecute(ctx, single = true, commit = false, args = ctx.request().getParam("id")) { sqlBuilder.buddhistChapter(it) }
     }
 
-    /**
-     * 根据佛经id查询该佛经下多有章节列表
-     * 章节简要列表
-     * id错误返回错误信息
-     */
+    //根据佛经id查询该佛经下多有章节列表
     private fun buddhistChapters(ctx: RoutingContext) {
-        val sql = sqlBuilder.buddhistChapters(ctx.request().getParam("id"))
-        if (null == sql)
-            ctx.response().end(error("invalid param id."))
-        else
-            sqlResult(ctx, sql, single = false, commit = false)
+        dataExecute(ctx, single = false, commit = false, args = ctx.request().getParam("id")) { sqlBuilder.buddhistChapters(it) }
     }
 
-    /**
-     * 返回佛经的分类数据
-     */
+    //返回佛经的分类数据
     private fun buddhistClassify(ctx: RoutingContext) {
         sqlResult(ctx,sqlBuilder.dataDict(DataType.BUDDHIST),single = false,commit = false)
     }
 
-    /**
-     * 保存佛经数据
-     */
+    //保存佛经数据
     private fun saveBuddhist(ctx: RoutingContext) {
-        var sql: String? = null
-        try {
-            sql = sqlBuilder.saveBuddhist(ctx.bodyAsJson)
-        } catch (e: Exception) {
-            ctx.response().end(error(e.message?:"request error"))
-        }
-        if (null != sql)
-            sqlResult(ctx, sql, single = true, commit = true)
+        dataExecute(ctx, single = true, commit = true, args = ctx.bodyAsJson) { sqlBuilder.saveBuddhist(it) }
     }
 
-    /**
-     * 保存多个佛经数据
-     */
+    //保存多个佛经数据
     private fun saveBuddhists(ctx: RoutingContext) {
-        var sql: String? = null
-        try {
-            sql = sqlBuilder.saveBuddhists(ctx.bodyAsJsonArray)
-        } catch (e: Exception) {
-            ctx.response().end(error(e.message?:"request error"))
-        }
-        if (null != sql)
-            sqlResult(ctx, sql, single = false, commit = true)
+        dataExecute(ctx, single = false, commit = true, args = ctx.bodyAsJsonArray) { sqlBuilder.saveBuddhists(it) }
     }
 
-    /**
-     * 保存佛经章节数据
-     */
+    //保存佛经章节数据
     private fun saveBuddhistChapter(ctx: RoutingContext) {
-        var sql: String? = null
-        try {
-            sql = sqlBuilder.saveBuddhistChapter(ctx.bodyAsJson)
-        } catch (e: Exception) {
-            ctx.response().end(error(e.message?:"request error"))
-        }
-        if (null != sql)
-            sqlResult(ctx, sql, single = true, commit = true)
+        dataExecute(ctx, single = true, commit = true, args = ctx.bodyAsJson) { sqlBuilder.saveBuddhistChapter(it) }
     }
 
-    /**
-     * 保存多个佛经章节数据
-     */
+    //保存多个佛经章节数据
     private fun saveBuddhistChapters(ctx: RoutingContext) {
-        var sql: String? = null
-        try {
-            sql = sqlBuilder.saveBuddhistChapters(ctx.bodyAsJsonArray)
-        } catch (e: Exception) {
-            ctx.response().end(error(e.message?:"request error"))
-        }
-        if (null != sql)
-            sqlResult(ctx, sql, single = false, commit = true)
+        dataExecute(ctx, single = false, commit = true, args = ctx.bodyAsJsonArray) { sqlBuilder.saveBuddhistChapters(it) }
     }
 
-    /**
-     * 更新佛经数据
-     */
+    //更新佛经数据
     private fun updateBuddhist(ctx: RoutingContext) {
-        var sql: String? = null
-        try {
-            sql = sqlBuilder.updateBuddhist(ctx.bodyAsJson)
-        } catch (e: Exception) {
-            ctx.response().end(error(e.message?:"request error"))
-        }
-        if (null != sql)
-            sqlResult(ctx, sql, single = true, commit = true)
+        dataExecute(ctx, single = true, commit = true, args = ctx.bodyAsJson) { sqlBuilder.updateBuddhist(it) }
     }
 
-    /**
-     * 更新佛经章节数据
-     */
+    //更新佛经章节数据
     private fun updateBuddhistChapter(ctx: RoutingContext) {
-        var sql: String? = null
-        try {
-            sql = sqlBuilder.updateBuddhistChapter(ctx.bodyAsJson)
-        } catch (e: Exception) {
-            ctx.response().end(error(e.message?:"request error"))
-        }
-        if (null != sql)
-            sqlResult(ctx, sql, single = true, commit = true)
+        dataExecute(ctx, single = true, commit = true, args = ctx.bodyAsJson) { sqlBuilder.updateBuddhistChapter(it) }
     }
 
-    /**
-     * 删除佛经数据
-     * 接收佛经id
-     * 暂时不开放
-     */
+    //删除佛经数据
     private fun deleteBuddhist(ctx: RoutingContext) {
-        ctx.response().end(permission("no permission to delete buddhist data"))
+        noOpen(ctx,DataTableEnum.BUDDHIST)
     }
 
-    /**
-     * 删除多个佛经数据
-     * 接收佛经id拼接字符串
-     * 暂时不开放
-     */
+    //删除多个佛经数据
     private fun deleteBuddhists(ctx: RoutingContext) {
-        ctx.response().end(permission("no permission to delete buddhist data"))
+        noOpen(ctx,DataTableEnum.BUDDHIST)
     }
 
-    /**
-     * 删除佛经章节数据
-     * 接收佛经章节id
-     * 暂时不开放
-     */
+    //删除佛经章节数据
     private fun deleteBuddhistChapter(ctx: RoutingContext) {
-        ctx.response().end(permission("no permission to delete buddhist chapter data"))
+        noOpen(ctx,DataTableEnum.BUDDHIST_CHAPTER)
     }
 
-    /**
-     * 删除多个佛经章节数据
-     * 接收删除模式：接收佛经章节id拼接字符串 或 佛经id
-     * 暂时不开放
-     */
+    //删除多个佛经章节数据
     private fun deleteBuddhistChapters(ctx: RoutingContext) {
-        ctx.response().end(permission("no permission to delete buddhist chapter data"))
+        noOpen(ctx,DataTableEnum.BUDDHIST_CHAPTER)
     }
 
-    private fun liveSrc(ctx: RoutingContext) { ctx.response().end(ok("building...")) }
-    private fun liveList(ctx: RoutingContext) { ctx.response().end(ok("building...")) }
-    private fun livePage(ctx: RoutingContext) { ctx.response().end(ok("building...")) }
+    //查询直播源详情
+    private fun liveSrc(ctx: RoutingContext) {
+        dataExecute(ctx, single = true, commit = false, args = ctx.request().getParam("id")) { sqlBuilder.liveSrc(it)}
+    }
 
-    /**
-     * 查询直播源分类数据
-     */
+    //检索直播源列表
+    private fun liveList(ctx: RoutingContext) {
+        dataExecute(ctx, single = false, commit = false, args = ctx.request().params()) { sqlBuilder.liveList(it) }
+    }
+
+    //分页查询直播源数据
+    private fun livePage(ctx: RoutingContext) {
+        dataExecute(ctx, single = false, commit = false, args = ctx.request().params()) { sqlBuilder.livePage(it) }
+    }
+
+    //查询直播源分类数据
     private fun liveClassify(ctx: RoutingContext) {
         sqlResult(ctx,sqlBuilder.dataDict(DataType.LIVE),single = false,commit = false)
     }
 
-    /**
-     * 保存直播源数据
-     */
+    //保存直播源数据
     private fun saveLive(ctx: RoutingContext) {
-        var sql: String? = null
-        try {
-            sql = sqlBuilder.saveLive(ctx.bodyAsJson)
-        } catch (e: Exception) {
-            ctx.response().end(error(e.message?:"request error"))
-        }
-        if (null != sql)
-            sqlResult(ctx, sql, single = true, commit = true)
+        dataExecute(ctx, single = true, commit = true, args = ctx.bodyAsJson) { sqlBuilder.saveLive(it) }
     }
 
-    /**
-     * 保存多个直播源数据
-     */
+    //保存多个直播源数据
     private fun saveLives(ctx: RoutingContext) {
-        var sql: String? = null
-        try {
-            sql = sqlBuilder.saveLives(ctx.bodyAsJsonArray)
-        } catch (e: Exception) {
-            ctx.response().end(error(e.message?:"request error"))
-        }
-        if (null != sql)
-            sqlResult(ctx, sql, single = false, commit = true)
+        dataExecute(ctx, single = false, commit = true, args = ctx.bodyAsJsonArray) { sqlBuilder.saveLives(it) }
     }
 
-    /**
-     * 更新直播源数据
-     */
+    //更新直播源数据
     private fun updateLive(ctx: RoutingContext) {
-        var sql: String? = null
-        try {
-            sql = sqlBuilder.updateLive(ctx.bodyAsJson)
-        } catch (e: Exception) {
-            ctx.response().end(error(e.message?:"request error"))
-        }
-        if (null != sql)
-            sqlResult(ctx, sql, single = true, commit = true)
+        dataExecute(ctx, single = true, commit = true, args = ctx.bodyAsJson) { sqlBuilder.updateLive(it) }
     }
 
-    /**
-     * 删除直播源数据，接收直播源id
-     * 暂时不开放
-     */
+    //删除直播源数据，接收直播源id
     private fun deleteLive(ctx: RoutingContext) {
-        ctx.response().end(permission("no permission to delete live data"))
+        noOpen(ctx,DataTableEnum.LIVE)
     }
 
-    /**
-     * 删除多个直播源数据，接收id拼接字符串
-     * 暂时不开放
-     */
+    //删除多个直播源数据，接收id拼接字符串
     private fun deleteLives(ctx: RoutingContext) {
-        ctx.response().end(permission("no permission to delete live data"))
+        noOpen(ctx,DataTableEnum.LIVE)
     }
 
-    private fun movieSrc(ctx: RoutingContext) { ctx.response().end(ok("building...")) }
-    private fun movieList(ctx: RoutingContext) { ctx.response().end(ok("building...")) }
-    private fun moviePage(ctx: RoutingContext) { ctx.response().end(ok("building...")) }
+    //查询电影详情
+    private fun movieSrc(ctx: RoutingContext) {
+        dataExecute(ctx, single = true, commit = false, args = ctx.request().getParam("id")) { sqlBuilder.movieSrc(it) }
+    }
 
-    /**
-     * 查询电影分类数据
-     */
+    //检索电影列表
+    private fun movieList(ctx: RoutingContext) {
+        dataExecute(ctx, single = false, commit = false, args = ctx.request().params()) { sqlBuilder.movieList(it) }
+    }
+
+    //分页查询电影列表
+    private fun moviePage(ctx: RoutingContext) {
+        dataExecute(ctx, single = false, commit = false, args = ctx.request().params()) { sqlBuilder.moviePage(it) }
+    }
+
+    //查询电影分类数据
     private fun movieClassify(ctx: RoutingContext) {
         sqlResult(ctx,sqlBuilder.dataDict(DataType.MOVIE),single = false,commit = false)
     }
 
-    /**
-     * 保存电影数据
-     */
+    //保存电影数据
     private fun saveMovie(ctx: RoutingContext) {
-        var sql: String? = null
-        try {
-            sql = sqlBuilder.saveMovie(ctx.bodyAsJson)
-        } catch (e: Exception) {
-            ctx.response().end(error(e.message?:"request error"))
-        }
-        if (null != sql)
-            sqlResult(ctx, sql, single = true, commit = true)
+        dataExecute(ctx, single = true, commit = true, args = ctx.bodyAsJson) { sqlBuilder.saveMovie(it) }
     }
 
-    /**
-     * 保存多个电影数据
-     */
+    //保存多个电影数据
     private fun saveMovies(ctx: RoutingContext) {
-        var sql: String? = null
-        try {
-            sql = sqlBuilder.saveMovies(ctx.bodyAsJsonArray)
-        } catch (e: Exception) {
-            ctx.response().end(error(e.message?:"request error"))
-        }
-        if (null != sql)
-            sqlResult(ctx, sql, single = true, commit = true)
+        dataExecute(ctx, single = false, commit = true, args = ctx.bodyAsJsonArray) { sqlBuilder.saveMovies(it) }
     }
 
-    /**
-     * 更新电影数据
-     */
+    //更新电影数据
     private fun updateMovie(ctx: RoutingContext) {
-        var sql: String? = null
-        try {
-            sql = sqlBuilder.updateMovie(ctx.bodyAsJson)
-        } catch (e: Exception) {
-            ctx.response().end(error(e.message?:"request error"))
-        }
-        if (null != sql)
-            sqlResult(ctx, sql, single = true, commit = true)
+        dataExecute(ctx, single = true, commit = true, args = ctx.bodyAsJson) { sqlBuilder.updateMovie(it) }
     }
 
-    /**
-     * 删除电影数据，接收电影id参数
-     * 暂时不开放
-     */
+    //删除电影数据，接收电影id参数
     private fun deleteMovie(ctx: RoutingContext) {
-        ctx.response().end(permission("no permission to delete movie data"))
+        noOpen(ctx,DataTableEnum.MOVIE)
     }
 
-    /**
-     * 删除多个电影数据，接收id拼接字符串
-     * 暂时不开放
-     */
+    //删除多个电影数据，接收id拼接字符串
     private fun deleteMovies(ctx: RoutingContext) {
-        ctx.response().end(permission("no permission to delete movie data"))
+        noOpen(ctx,DataTableEnum.MOVIE)
     }
 
-    private fun picSrc(ctx: RoutingContext) { ctx.response().end(ok("building...")) }
-    private fun picList(ctx: RoutingContext) { ctx.response().end(ok("building...")) }
-    private fun picPage(ctx: RoutingContext) { ctx.response().end(ok("building...")) }
+    //查询图片详情
+    private fun picSrc(ctx: RoutingContext) {
+        dataExecute(ctx, single = true, commit = false, args = ctx.request().getParam("id")) { sqlBuilder.picSrc(it) }
+    }
 
-    /**
-     * 查询图片分类数据
-     */
+    //检索图片列表
+    private fun picList(ctx: RoutingContext) {
+        dataExecute(ctx, single = false, commit = false, args = ctx.request().params()) { sqlBuilder.picList(it) }
+    }
+
+    //分页查询图片列表
+    private fun picPage(ctx: RoutingContext) {
+        dataExecute(ctx, single = false, commit = false, args = ctx.request().params()) { sqlBuilder.picPage(it) }
+    }
+
+    //查询图片分类数据
     private fun picClassify(ctx: RoutingContext) {
         sqlResult(ctx,sqlBuilder.dataDict(DataType.PIC),single = false,commit = false)
     }
 
-    /**
-     * 保存图片数据
-     */
+    //保存图片数据
     private fun savePic(ctx: RoutingContext) {
-        var sql: String? = null
-        try {
-            sql = sqlBuilder.savePic(ctx.bodyAsJson)
-        } catch (e: Exception) {
-            ctx.response().end(error(e.message?:"request error"))
-        }
-        if (null != sql)
-            sqlResult(ctx, sql, single = true, commit = true)
+        dataExecute(ctx, single = true, commit = true, args = ctx.bodyAsJson) { sqlBuilder.savePic(it) }
     }
 
-    /**
-     * 保存多个图片数据
-     */
+    //保存多个图片数据
     private fun savePics(ctx: RoutingContext) {
-        var sql: String? = null
-        try {
-            sql = sqlBuilder.savePics(ctx.bodyAsJsonArray)
-        } catch (e: Exception) {
-            ctx.response().end(error(e.message?:"request error"))
-        }
-        if (null != sql)
-            sqlResult(ctx, sql, single = true, commit = true)
+        dataExecute(ctx, single = false, commit = true, args = ctx.bodyAsJsonArray) { sqlBuilder.savePics(it) }
     }
 
-    /**
-     * 更新图片数据
-     */
+    //更新图片数据
     private fun updatePic(ctx: RoutingContext) {
+        dataExecute(ctx, single = true, commit = true, args = ctx.bodyAsJson) { sqlBuilder.updatePic(it) }
+    }
+
+    //删除图片数据，接收图片id参数
+    private fun deletePic(ctx: RoutingContext) {
+        noOpen(ctx,DataTableEnum.PIC)
+    }
+
+    //删除多个图片数据，接收id拼接字符串
+    private fun deletePics(ctx: RoutingContext) {
+        noOpen(ctx,DataTableEnum.PIC)
+    }
+
+    //=================================== 方法统一执行 ================================================
+
+    /**
+     * 数据请求、数据操作统一方法
+     */
+    private fun <T> dataExecute(ctx: RoutingContext,
+                            single: Boolean, commit: Boolean,
+                            args: T, sqlMethod: (arg: T) -> String) {
         var sql: String? = null
         try {
-            sql = sqlBuilder.updatePic(ctx.bodyAsJson)
+            sql = sqlMethod(args)
         } catch (e: Exception) {
             ctx.response().end(error(e.message?:"request error"))
         }
-        if (null != sql)
-            sqlResult(ctx, sql, single = true, commit = true)
-    }
-
-    /**
-     * 删除图片数据，接收图片id参数
-     * 暂时不开放
-     */
-    private fun deletePic(ctx: RoutingContext) {
-        ctx.response().end(permission("no permission to delete pic data"))
-    }
-
-    /**
-     * 删除多个图片数据，接收id拼接字符串
-     * 暂时不开放
-     */
-    private fun deletePics(ctx: RoutingContext) {
-        ctx.response().end(permission("no permission to delete pic data"))
+        if (null != sql )
+            sqlResult(ctx, sql, single, commit)
     }
 
     //=================================== SQL execute ================================================
@@ -970,6 +634,10 @@ class DataOperationImpl : DataOperation {
 
     //========================= error data response ===============================================
 
+    private fun noOpen(ctx: RoutingContext, data: DataTableEnum) {
+        ctx.response().end(permission("no permission to delete ${data.name.toLowerCase()} data"))
+    }
+
     private fun operationError(operation: String) : String = err("p1",operation)
     private fun dataError(data: String) : String = err("p2",data)
     private fun methodError(method: String) : String = err("p3",method)
@@ -979,7 +647,6 @@ class DataOperationImpl : DataOperation {
     private fun requestError(request: String) : String {
         return Response.notAllowed("request method[$request] not allowed,")
     }
-    private fun <T> ok(data: T) : String = Response.ok(data)
     private fun error(msg: String) : String = Response.error(msg)
     private fun permission(msg: String) : String = Response.permission(msg)
 
