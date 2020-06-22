@@ -1,4 +1,4 @@
-package com.mao.enum
+package com.mao.type
 
 /**
  * 请求类型
@@ -38,4 +38,17 @@ enum class DataType {
  */
 enum class DataMethod {
     ERROR, SRC, LIST, PAGE, CHAPTER, CHAPTERS, CLASSIFY
+}
+
+/**
+ * his请求类型
+ * WEATHER：天气数据请求，通过传递城市名称city获取天气数据
+ * ADDRESS：根据ip获取该ip所在地址数据
+ * SUDOKU：数独解析
+ */
+enum class HisType {
+    WEATHER,
+    ADDRESS,
+    SUDOKU,
+    ERROR
 }

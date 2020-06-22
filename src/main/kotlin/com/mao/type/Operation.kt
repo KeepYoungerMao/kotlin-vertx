@@ -1,16 +1,13 @@
-package com.mao.enum
+package com.mao.type
 
 import io.vertx.core.http.HttpMethod
 
 /**
- * 分发参数的处理
- * 资源类型转化
- * 操作类型转化
- * 数据类型转化
- * 数据处理方式类型转化
- * 请求方式是否正确的判断
+ * 处理 /api/data/:operation/:data/:method 的请求URL参数的转化
+ * 将URL参数转化为ENUM类型，转化失败返回ERROR类型
+ * 转化类型详见 com.mao.enum.DataType.kt
  */
-object EnumOperation {
+object Operation {
 
     fun operationType(operation: String?) : OperationType {
         return try {
@@ -43,6 +40,14 @@ object EnumOperation {
             OperationType.EDIT -> method == HttpMethod.POST
             OperationType.REMOVE -> method == HttpMethod.DELETE
             else -> false
+        }
+    }
+
+    fun hisType(type: String?) : HisType {
+        return try {
+            HisType.valueOf(type?.toUpperCase()?:"ERROR")
+        } catch (e: Exception) {
+            HisType.ERROR
         }
     }
 

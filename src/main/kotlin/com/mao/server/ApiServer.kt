@@ -3,14 +3,18 @@ package com.mao.server
 import com.mao.data.DataTable
 import com.mao.data.FileReader
 import com.mao.data.Response
-import com.mao.service.DataOperation
+import com.mao.service.AuthHandler
+import com.mao.service.DataHandler
 import com.mao.service.ErrorHandler
+import com.mao.service.HisHandler
 import com.mao.util.SnowFlake
 import io.vertx.core.AbstractVerticle
 import io.vertx.core.Vertx
 import io.vertx.core.json.JsonObject
 import io.vertx.ext.jdbc.JDBCClient
 import io.vertx.ext.web.Router
+import io.vertx.ext.web.client.WebClient
+import io.vertx.ext.web.client.WebClientOptions
 import io.vertx.ext.web.handler.BodyHandler
 
 /**
@@ -26,11 +30,33 @@ import io.vertx.ext.web.handler.BodyHandler
  *
  * 使用BodyHandler：
  * BodyHandler默认不会将表单参数合并到body主体中
+ *
+ * 使用handler的方式：
+ * 1. 使用静态方法模式：
+ *      router.route("/test").handler(Test::testHandler);
+ *
+ *      private static void testHandler(RoutingContext ctx) {
+ *          ctx.response.end("ok");
+ *      }
+ *
+ * 2. 使用类实现 Handler<RoutingContext> 接口
+ *   这种是在vertX中默认使用的，而且都是使用接口继承Handler接口，再由实现类实现方法，在接口中定义创建实例的静态方法
+ *      interface Test extend Handler<RoutingContext> {
+ *          static void create() { return new TestImpl(); }
+ *      }
+ *
+ *      class TestImpl implements Test {
+ *          @override
+ *          public void handler(RoutingContext ctx) {
+ *              ctx.response().end("ok");
+ *          }
+ *      }
+ * vertX中默认使用的都是类方法，且是如：new BodyHandlerImpl()，没有所谓的单例。这样请求来了，难道不耗费时间么？
+ * 在查看后可以看出：启动后，请求访问之前，Router对象已经被创建，handler的类也已经完成创建，请求访问时没有类的创建。
  */
 class ApiServer : AbstractVerticle() {
 
     private val server = FileReader.readServer("/config/server.properties")
-    private val dataOperation = DataOperation.created()
 
     companion object {
         val jdbcClient: JDBCClient = JDBCClient.createShared(
@@ -40,18 +66,19 @@ class ApiServer : AbstractVerticle() {
                 .put("user","root")
                 .put("password","root")
         )
+        val webClient: WebClient = WebClient.create(
+            Vertx.vertx(), WebClientOptions().setUserAgent("Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/83.0.4103.106 Safari/537.36").setKeepAlive(false)
+        )
         val idBuilder: SnowFlake = SnowFlake(1,1)
         val dataTable: MutableList<DataTable> = FileReader.readTable("/config/data_table.json")
     }
 
     override fun start() {
         val router = Router.router(vertx)
-        router.route().handler {
-            it.response().putHeader("content-type","application/json charset=utf-8")
-            it.next()
-        }
         router.route("/").handler { it.response().end(Response.ok(server)) }
-        router.route("/api/data/:operation/:data/:method").handler(BodyHandler.create()).handler(dataOperation)
+        router.route().handler(AuthHandler.create())
+        router.route("/api/data/:operation/:data/:method").handler(BodyHandler.create()).handler(DataHandler.created())
+        router.route("/api/his/:data").handler(BodyHandler.create()).handler(HisHandler.create())
         router.errorHandler(404, ErrorHandler.created(404))
         router.errorHandler(405, ErrorHandler.created(405))
         router.errorHandler(500, ErrorHandler.created(500))

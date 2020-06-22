@@ -3,25 +3,25 @@ package com.mao.service
 import com.mao.data.DataTableEnum
 import com.mao.sql.Query
 import com.mao.data.Response
-import com.mao.enum.DataMethod
-import com.mao.enum.DataType
-import com.mao.enum.OperationType
-import com.mao.enum.EnumOperation
+import com.mao.type.DataMethod
+import com.mao.type.DataType
+import com.mao.type.OperationType
+import com.mao.type.Operation
 import com.mao.sql.SqlBuilder
 import com.mao.sql.SqlBuilderExecute
 import io.vertx.core.Handler
 import io.vertx.ext.web.RoutingContext
 import java.lang.Exception
 
-interface DataOperation : Handler<RoutingContext> {
+interface DataHandler : Handler<RoutingContext> {
 
     companion object {
-        fun created() : DataOperation = DataOperationImpl()
+        fun created() : DataHandler = DataHandlerImpl()
     }
 
 }
 
-class DataOperationImpl : DataOperation {
+class DataHandlerImpl : DataHandler {
 
     private val queryHandler: Query = Query()
     private val sqlBuilder: SqlBuilder = SqlBuilderExecute()
@@ -30,10 +30,10 @@ class DataOperationImpl : DataOperation {
         val operation = ctx.pathParam("operation")
         val data = ctx.pathParam("data")
         val method = ctx.pathParam("method")
-        val operationEnum = EnumOperation.operationType(operation)
-        val dataEnum = EnumOperation.dataType(data)
-        val methodEnum = EnumOperation.dataMethod(method)
-        if (EnumOperation.canRequest(operationEnum,ctx.request().method())) {
+        val operationEnum = Operation.operationType(operation)
+        val dataEnum = Operation.dataType(data)
+        val methodEnum = Operation.dataMethod(method)
+        if (Operation.canRequest(operationEnum,ctx.request().method())) {
             when (dataEnum) {
                 DataType.BOOK -> {
                     when (operationEnum) {

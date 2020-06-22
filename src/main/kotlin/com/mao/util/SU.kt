@@ -29,9 +29,7 @@ object SU {
 
     fun toLong(str: String?) : Long = toLong(str,-1)
 
-    fun isNotEmpty(str: String?) : Boolean {
-        return null != str && str.isNotEmpty()
-    }
+    fun isNotEmpty(str: String?) : Boolean = null != str && str.isNotEmpty()
 
     fun isEmpty(str: String?) : Boolean = !isNotEmpty(str)
 

@@ -6,6 +6,13 @@ import io.vertx.core.AsyncResult
 import io.vertx.core.Future
 import io.vertx.core.Handler
 
+/**
+ * SQL执行方法。异步返回。
+ * single判断是否返回单条数据，如果是则返回resultRows中的第一条
+ * commit表示是否需要提交：
+ * 方法默认查询数据不需要提交，返回查询的结果；
+ * 更新、保存、删除数据时需要提交，返回是否成功。
+ */
 class Query {
 
     fun execute(query: String, single: Boolean, commit: Boolean, handler: Handler<AsyncResult<String>>) {

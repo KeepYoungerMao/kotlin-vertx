@@ -2,7 +2,7 @@ package com.mao.sql
 
 import com.mao.data.Column
 import com.mao.data.DataTable
-import com.mao.enum.DataType
+import com.mao.type.DataType
 import com.mao.server.ApiServer
 import com.mao.util.SU
 import io.vertx.core.MultiMap

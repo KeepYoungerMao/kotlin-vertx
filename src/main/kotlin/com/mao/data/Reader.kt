@@ -19,19 +19,13 @@ object FileReader {
      * 读取服务器数据
      */
     fun readServer(path: String) : Server {
-        return Server(read(path))
-    }
-
-    private fun read(path: String) : Properties {
-        val path2 = if (path.startsWith("/")) path else "/$path"
         val properties = Properties()
-        val inputStream: InputStream? = FileReader::class.java.getResourceAsStream(path2)
         try {
-            properties.load(inputStream)
+            properties.load(getInputStream(path))
         } catch (e: IOException) {
             e.printStackTrace()
         }
-        return properties
+        return Server(properties)
     }
 
     /**
@@ -39,19 +33,21 @@ object FileReader {
      */
     fun readTable(path: String) : MutableList<DataTable> {
         try {
-            return jacksonObjectMapper().readValue(read2(path))
+            val reader = BufferedReader(InputStreamReader(getInputStream(path)))
+            val sb = StringBuilder()
+            reader.forEachLine { sb.append(it) }
+            return jacksonObjectMapper().readValue(sb.toString())
         } catch (e: Exception) {
             throw RuntimeException("read data table error")
         }
     }
 
-    private fun read2(path: String) : String {
+    /**
+     * 获取inputStream
+     */
+    private fun getInputStream(path: String) : InputStream {
         val path2 = if (path.startsWith("/")) path else "/$path"
-        val inputStream = FileReader::class.java.getResourceAsStream(path2)
-        val reader = BufferedReader(InputStreamReader(inputStream))
-        val sb = StringBuilder()
-        reader.forEachLine { sb.append(it) }
-        return sb.toString()
+        return FileReader::class.java.getResourceAsStream(path2)
     }
 
 }
