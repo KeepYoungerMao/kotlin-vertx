@@ -11,6 +11,8 @@ import io.vertx.core.json.JsonObject
 
 /**
  * 组装SQL的基本操作实现
+ * 在组装SQL的同时会对传递的参数做基本的校验，
+ * 如果不符合校验则抛出IllegalArgumentException异常。
  */
 class SqlBuilderExecute : SqlBuilder() {
 
@@ -28,7 +30,7 @@ class SqlBuilderExecute : SqlBuilder() {
         return if (list){
             //用于查询所有章节列表，获取字段下list参数为true的字段
             if (table.main)
-                throw IllegalArgumentException("not support search list data with key column. because it is a main table.")
+                throw IllegalArgumentException("not support search list data with key column. it isn't a main table.")
             "SELECT ${dataShow(table)} FROM ${table.name} WHERE `${dataListKey(table)}` = $id ORDER BY `${table.order}`"
         } else {
             //查询单个详情，获取主键
@@ -41,7 +43,7 @@ class SqlBuilderExecute : SqlBuilder() {
      */
     private fun dataListKey(table: DataTable) : String {
         table.columns.forEach { if (it.list) return it.name }
-        throw IllegalArgumentException("search database error: no set list key column.")
+        throw IllegalArgumentException("search database error: not found list key column.")
     }
 
     /**
@@ -50,7 +52,7 @@ class SqlBuilderExecute : SqlBuilder() {
      */
     private fun dataKey(table: DataTable) : String {
         table.columns.forEach { if (it.type == Column.KEY) return it.name }
-        throw IllegalArgumentException("search database error: no set key column.")
+        throw IllegalArgumentException("search database error: not found key column.")
     }
 
     /**
@@ -60,7 +62,7 @@ class SqlBuilderExecute : SqlBuilder() {
         var sql = ""
         table.columns.forEach { if (it.show) sql += "`${it.name}`," }
         if (SU.isEmpty(sql))
-            throw IllegalArgumentException("no set show column while search list data.")
+            throw IllegalArgumentException("not found any show column while search list data.")
         return sql.substring(0,sql.lastIndex)
     }
 

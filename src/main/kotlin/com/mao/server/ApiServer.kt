@@ -1,8 +1,6 @@
 package com.mao.server
 
-import com.mao.data.DataTable
-import com.mao.data.FileReader
-import com.mao.data.Response
+import com.mao.data.*
 import com.mao.service.AuthHandler
 import com.mao.service.DataHandler
 import com.mao.service.ErrorHandler
@@ -56,21 +54,22 @@ import io.vertx.ext.web.handler.BodyHandler
  */
 class ApiServer : AbstractVerticle() {
 
-    private val server = FileReader.readServer("/config/server.properties")
-
     companion object {
+        private val server: Server = FileReader.readServer("/config/server.properties")
+        val authClient: MutableList<AuthClient> = FileReader.readClient("/config/client.json")
+        val dataTable: MutableList<DataTable> = FileReader.readTable("/config/data_table.json")
+        private val config: Config = FileReader.readConfig("/config/config.properties")
         val jdbcClient: JDBCClient = JDBCClient.createShared(
             Vertx.vertx(), JsonObject()
-                .put("url","jdbc:mysql://localhost:3306/keep_younger?characterEncoding=utf-8&serverTimezone=Asia/Shanghai")
-                .put("driver_class","com.mysql.cj.jdbc.Driver")
-                .put("user","root")
-                .put("password","root")
+            .put("url", config.url + config.urlParam)
+            .put("driver_class", config.driver)
+            .put("user", config.username)
+            .put("password", config.password)
         )
         val webClient: WebClient = WebClient.create(
-            Vertx.vertx(), WebClientOptions().setUserAgent("Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/83.0.4103.106 Safari/537.36").setKeepAlive(false)
+            Vertx.vertx(), WebClientOptions().setUserAgent(config.userAgent).setKeepAlive(config.keepAlive)
         )
-        val idBuilder: SnowFlake = SnowFlake(1,1)
-        val dataTable: MutableList<DataTable> = FileReader.readTable("/config/data_table.json")
+        val idBuilder: SnowFlake = SnowFlake(config.dataCenter, config.machine)
     }
 
     override fun start() {

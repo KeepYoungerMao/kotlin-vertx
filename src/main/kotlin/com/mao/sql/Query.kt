@@ -15,6 +15,18 @@ import io.vertx.core.Handler
  */
 class Query {
 
+    /**
+     * SQL统一执行方法
+     * 异步执行
+     * 根据single和commit参数判断执行逻辑和返回数据
+     * single：是否为单条数据，目前当commit为true的时候不做判断。
+     *      在commit为false的时候起作用。
+     *      查询单条数据是返回单条数据
+     *      查询多条数据时返回多条数据
+     * commit：是否需要提交：此参数为true时表示此SQL为非查询类SQL
+     *      需要执行提交操作。此时返回成功或失败的信息提示数据
+     * 返回数据统一为ResponseData类型的json字符串。
+     */
     fun execute(query: String, single: Boolean, commit: Boolean, handler: Handler<AsyncResult<String>>) {
         ApiServer.jdbcClient.getConnection { res -> kotlin.run {
             if (res.succeeded()) {

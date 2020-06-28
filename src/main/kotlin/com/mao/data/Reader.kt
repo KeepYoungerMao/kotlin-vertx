@@ -19,13 +19,14 @@ object FileReader {
      * 读取服务器数据
      */
     fun readServer(path: String) : Server {
-        val properties = Properties()
-        try {
-            properties.load(getInputStream(path))
-        } catch (e: IOException) {
-            e.printStackTrace()
-        }
-        return Server(properties)
+        return Server(getProperties(path))
+    }
+
+    /**
+     * 读取服务配置参数
+     */
+    fun readConfig(path: String) : Config {
+        return Config(getProperties(path))
     }
 
     /**
@@ -33,13 +34,46 @@ object FileReader {
      */
     fun readTable(path: String) : MutableList<DataTable> {
         try {
-            val reader = BufferedReader(InputStreamReader(getInputStream(path)))
-            val sb = StringBuilder()
-            reader.forEachLine { sb.append(it) }
-            return jacksonObjectMapper().readValue(sb.toString())
+            return jacksonObjectMapper().readValue(getString(path))
         } catch (e: Exception) {
             throw RuntimeException("read data table error")
         }
+    }
+
+    /**
+     * 读取auth client 数据
+     */
+    fun readClient(path: String) : MutableList<AuthClient> {
+        try {
+            return jacksonObjectMapper().readValue(getString(path))
+        } catch (e: Exception) {
+            throw RuntimeException("read auth client error")
+        }
+    }
+
+    /**
+     * 读取json文件
+     * 返回string
+     */
+    private fun getString(path: String) : String {
+        val reader = BufferedReader(InputStreamReader(getInputStream(path)))
+        val sb = StringBuilder()
+        reader.forEachLine { sb.append(it) }
+        return sb.toString()
+    }
+
+    /**
+     * 读取properties文件
+     * 返回Properties
+     */
+    private fun getProperties(path: String) : Properties {
+        val properties = Properties()
+        try {
+            properties.load(getInputStream(path))
+        } catch (e: IOException) {
+            e.printStackTrace()
+        }
+        return properties
     }
 
     /**

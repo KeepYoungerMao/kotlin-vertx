@@ -5,6 +5,8 @@ package com.mao.util
  */
 object SU {
 
+    private val RANDOM: String = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
+
     fun isNumber(str: String) : Boolean {
         return try {
             str.toLong() > 0
@@ -32,5 +34,12 @@ object SU {
     fun isNotEmpty(str: String?) : Boolean = null != str && str.isNotEmpty()
 
     fun isEmpty(str: String?) : Boolean = !isNotEmpty(str)
+
+    fun randomSting(len: Int) : String {
+        val array = CharArray(len)
+        for (i in 0 until len)
+            array[i] = RANDOM.random()
+        return String(array)
+    }
 
 }

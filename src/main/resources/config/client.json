@@ -1,0 +1,15 @@
+[
+  {
+    "client_id": "system",
+    "client_secret": "system",
+    "client_name": "system",
+    "enabled": true,
+    "locked": false,
+    "state": "system",
+    "redirect_uri": "http://192.168.0.10:30001/api/login",
+    "grant_type": ["authorization_code", "password", "refresh_token"],
+    "scope": [],
+    "access_token_validation": 7200,
+    "refresh_token_validation": 7200
+  }
+]
