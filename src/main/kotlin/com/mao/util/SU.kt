@@ -5,7 +5,7 @@ package com.mao.util
  */
 object SU {
 
-    private val RANDOM: String = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
+    private const val RANDOM: String = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
 
     fun isNumber(str: String) : Boolean {
         return try {

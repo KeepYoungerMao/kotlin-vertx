@@ -1,14 +1,13 @@
 [
   {
-    "client_id": "system",
+    "client_id": "10001",
     "client_secret": "system",
     "client_name": "system",
     "enabled": true,
     "locked": false,
-    "state": "system",
-    "redirect_uri": "http://192.168.0.10:30001/api/login",
-    "grant_type": ["authorization_code", "password", "refresh_token"],
-    "scope": [],
+    "expired": false,
+    "authority": ["data-search", "data-save", "data-edit","data"],
+    "ips": [],
     "access_token_validation": 7200,
     "refresh_token_validation": 7200
   }
