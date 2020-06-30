@@ -47,7 +47,7 @@ object Secret {
     }
 
     /**
-     *
+     * 16进制字符转byte
      */
     private fun parseHexStrToByte(str: String) : ByteArray? {
         if (str.isEmpty()) return null
@@ -57,13 +57,13 @@ object Secret {
         val d = ByteArray(len)
         for (i in 0 until len) {
             val pos = i*2
-            d[i] = (charToByte(chars[pos]).toInt() shl 4 or charToByte(chars[pos + 1]).toInt()).toByte()
+            d[i] = (charToByte(chars[pos]) shl 4 or charToByte(chars[pos + 1])).toByte()
         }
         return d
     }
 
-    private fun charToByte(c: Char) : Byte {
-        return "0123456789ABCDEF".indexOf(c).toByte()
+    private fun charToByte(c: Char) : Int {
+        return "0123456789ABCDEF".indexOf(c).toByte().toInt()
     }
 
 }

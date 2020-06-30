@@ -23,7 +23,7 @@ interface DataHandler : Handler<RoutingContext> {
 
 class DataHandlerImpl : DataHandler {
 
-    private val queryHandler: Query = Query()
+    private val query: Query = Query.create()
     private val sqlBuilder: SqlBuilder = SqlBuilderExecute()
 
     override fun handle(ctx: RoutingContext) {
@@ -623,7 +623,7 @@ class DataHandlerImpl : DataHandler {
      * @param commit 是否需要提交，需要提交的表示为更新、保存、删除类型SQL语句
      */
     private fun sqlResult(ctx: RoutingContext, sql: String, single: Boolean, commit: Boolean) {
-        queryHandler.execute(sql,single,commit,handler = Handler { res -> kotlin.run {
+        query.execute(sql,single,commit,handler = Handler { res -> kotlin.run {
             if (res.succeeded()) {
                 ctx.response().end(res.result())
             } else {

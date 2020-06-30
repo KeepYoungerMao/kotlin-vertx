@@ -6,6 +6,16 @@ import io.vertx.core.AsyncResult
 import io.vertx.core.Future
 import io.vertx.core.Handler
 
+interface Query {
+
+    companion object {
+        fun create() : Query = QueryImpl()
+    }
+
+    fun execute(query: String, single: Boolean, commit: Boolean, handler: Handler<AsyncResult<String>>)
+
+}
+
 /**
  * SQL执行方法。异步返回。
  * single判断是否返回单条数据，如果是则返回resultRows中的第一条
@@ -13,7 +23,7 @@ import io.vertx.core.Handler
  * 方法默认查询数据不需要提交，返回查询的结果；
  * 更新、保存、删除数据时需要提交，返回是否成功。
  */
-class Query {
+class QueryImpl : Query {
 
     /**
      * SQL统一执行方法
@@ -27,7 +37,7 @@ class Query {
      *      需要执行提交操作。此时返回成功或失败的信息提示数据
      * 返回数据统一为ResponseData类型的json字符串。
      */
-    fun execute(query: String, single: Boolean, commit: Boolean, handler: Handler<AsyncResult<String>>) {
+    override fun execute(query: String, single: Boolean, commit: Boolean, handler: Handler<AsyncResult<String>>) {
         ApiServer.jdbcClient.getConnection { res -> kotlin.run {
             if (res.succeeded()) {
                 val connection = res.result()

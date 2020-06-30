@@ -36,6 +36,7 @@ class AuthHandlerImpl : AuthHandler {
         const val AUTHORIZATION = "Authorization"
         const val ACCESS_TOKEN_URL = "/oauth/access_token"
         const val REFRESH_TOKEN_URL = "/oauth/refresh_token"
+        const val FAVICON = "/favicon.ico"
     }
 
     override fun handle(ctx: RoutingContext) {
@@ -139,15 +140,27 @@ class AuthHandlerImpl : AuthHandler {
         ctx.response().end(Response.error("building"))
     }
 
-
+    /**
+     * 请求拦截
+     * favicon.ico不做记录
+     * 请求需要头部添加 Authorization ：access_token
+     */
     private fun authentication(ctx: RoutingContext) {
-        val authCode = ctx.request().getHeader(AUTHORIZATION)
-        if (null == authCode)
-            println("request without Authorization code.")
-        else
-            println("request with Authorization code: $authCode")
-        ctx.response().putHeader("content-type","application/json charset=utf-8")
-        ctx.next()
+        val path = ctx.request().path()
+        if (path == FAVICON) ctx.response().end()
+        else {
+            val authCode = ctx.request().getHeader(AUTHORIZATION)
+            if (null == authCode) permission(ctx,"need Authorization")
+            else {
+                val clientId = cachedToken[authCode]
+                if (null == clientId) permission(ctx,"invalid Authorization.")
+                else {
+                    println("user[$clientId] searching path[$path]")
+                    ctx.response().putHeader("content-type","application/json charset=utf-8")
+                    ctx.next()
+                }
+            }
+        }
     }
 
     private fun getClient(id: String) : AuthClient? {
@@ -157,9 +170,7 @@ class AuthHandlerImpl : AuthHandler {
     private fun getToken(expire: Long) : AuthToken {
         return AuthToken(SU.randomSting(32),SU.randomSting(32),expire,timeStamp())
     }
-    private fun timeStamp() : Long {
-        return System.currentTimeMillis()/1000
-    }
+    private fun timeStamp() : Long = System.currentTimeMillis()/1000
 
     private fun lossParam(ctx: RoutingContext, param: String) {
         ctx.response().end(Response.error("param error: loss param $param"))

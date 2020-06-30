@@ -5,10 +5,10 @@
 
     <groupId>com.mao</groupId>
     <artifactId>kotlin-vertx</artifactId>
-    <version>1.0-SNAPSHOT</version>
+    <version>1.01-B</version>
     <packaging>jar</packaging>
 
-    <name>com.mao kotlin-vertx</name>
+    <name>keep younger</name>
 
     <properties>
         <java.version>1.8</java.version>

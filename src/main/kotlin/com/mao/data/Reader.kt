@@ -52,6 +52,19 @@ object FileReader {
     }
 
     /**
+     * 读取licence
+     */
+    fun readLicence(path: String) : String {
+        val reader = BufferedReader(InputStreamReader(getInputStream(path)))
+        val sb = StringBuilder()
+        reader.forEachLine {
+            if (it.isNotBlank() && !it.startsWith("#"))
+                sb.append(it.replace(" ",""))
+        }
+        return sb.toString()
+    }
+
+    /**
      * 读取json文件
      * 返回string
      */
