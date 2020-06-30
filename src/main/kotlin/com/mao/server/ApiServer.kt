@@ -51,6 +51,29 @@ import io.vertx.ext.web.handler.BodyHandler
  *      }
  * vertX中默认使用的都是类方法，且是如：new BodyHandlerImpl()，没有所谓的单例。这样请求来了，难道不耗费时间么？
  * 在查看后可以看出：启动后，请求访问之前，Router对象已经被创建，handler的类也已经完成创建，请求访问时没有类的创建。
+ *
+ * 关于companion object：
+ * 目前所了解的只适用于静态处理。
+ * 在route的handler处理中，vertX提供的一些基本处理如：BodyHandler.create()
+ * 源码中只是：return new BodyHandlerImpl();
+ * 我想继承此思想：route的handler处理都采用：interface.create() 的处理方式
+ * 但是每次处理都 new 一个对象感觉开销太大
+ * 于是便找了些单例的使用方法：
+ * 1. 单例 加锁
+ *      private var instance: DataHandler? = null
+ *      fun create() : DataHandler = instance?: synchronized(this) {
+ *          instance?: DataHandlerImpl().apply { instance = this }
+ *      }
+ * 2. kotlin中的懒加载：
+ *      val instance: DrugSrc by lazy {  DrugSrcImpl() }
+ * 测试正常。
+ * 但后来就不用担心了，多虑了，程序启动后，Router会被加载，加载过程中，每个handler都被加载了，之后便不会再进行创建。
+ * 因此handler中的Handler对象都只创建了一次，根本不需要考虑单例的问题。
+ *
+ * 但这种单例的方式还是有用武之地的
+ * 比如：我使用了Query对象进行对SQL的查询，也是采用 interface.create() 的创建方式
+ * 这个时候如果有多个Handler对象引用了此类，则每个Handler对象中的Query对象都是不同得
+ * 这个时候Query对象就可以使用单例的方式了。
  */
 class ApiServer : AbstractVerticle() {
 

@@ -9,7 +9,7 @@ import io.vertx.core.Handler
 interface Query {
 
     companion object {
-        fun create() : Query = QueryImpl()
+        val INSTANCE: Query by lazy { QueryImpl() }
     }
 
     fun execute(query: String, single: Boolean, commit: Boolean, handler: Handler<AsyncResult<String>>)

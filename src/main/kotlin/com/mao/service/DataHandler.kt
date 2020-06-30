@@ -23,7 +23,7 @@ interface DataHandler : Handler<RoutingContext> {
 
 class DataHandlerImpl : DataHandler {
 
-    private val query: Query = Query.create()
+    private val query: Query = Query.INSTANCE
     private val sqlBuilder: SqlBuilder = SqlBuilderExecute()
 
     override fun handle(ctx: RoutingContext) {
