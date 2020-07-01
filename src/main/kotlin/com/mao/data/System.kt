@@ -15,7 +15,7 @@ object SystemInit {
 
     fun licence(key: String) {
         if (key.isBlank() || key.length != 16) initError()
-        val data = FileReader.readLicence("/LICENCE")
+        val data = Reader.readLicence("/LICENCE")
         if (data.isBlank()) initError()
         try {
             val decrypt = Secret.decrypt(data, key)!!

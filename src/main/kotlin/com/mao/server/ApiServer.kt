@@ -8,7 +8,6 @@ import com.mao.service.HisHandler
 import com.mao.util.SnowFlake
 import io.vertx.core.AbstractVerticle
 import io.vertx.core.Vertx
-import io.vertx.core.json.JsonObject
 import io.vertx.ext.jdbc.JDBCClient
 import io.vertx.ext.web.Router
 import io.vertx.ext.web.client.WebClient
@@ -78,17 +77,16 @@ import io.vertx.ext.web.handler.BodyHandler
 class ApiServer : AbstractVerticle() {
 
     companion object {
-        private val server: Server = FileReader.readServer("/config/server.properties")
-        val authClient: MutableList<AuthClient> = FileReader.readClient("/config/client.json")
-        val dataTable: MutableList<DataTable> = FileReader.readTable("/config/data_table.json")
-        private val config: Config = FileReader.readConfig("/config/config.properties")
-        val jdbcClient: JDBCClient = JDBCClient.createShared(
-            Vertx.vertx(), JsonObject()
-            .put("url", config.url + config.urlParam)
-            .put("driver_class", config.driver)
-            .put("user", config.username)
-            .put("password", config.password)
-        )
+        private const val SERVER_PATH = "/config/server.properties"
+        private const val CLIENT_PATH = "/config/client.json"
+        private const val DATA_PATH = "/config/data_table.json"
+        private const val CONFIG_PATH = "/config/config.properties"
+        private const val JDBC_PATH = "/config/jdbc.properties"
+        private val server: Server = Reader.readServer(SERVER_PATH)
+        val authClient: MutableList<AuthClient> = Reader.readClient(CLIENT_PATH)
+        val dataTable: MutableList<DataTable> = Reader.readTable(DATA_PATH)
+        private val config: Config = Reader.readConfig(CONFIG_PATH)
+        val jdbcClient: JDBCClient = JDBCClient.createShared(Vertx.vertx(), Reader.readJDBC(JDBC_PATH))
         val webClient: WebClient = WebClient.create(
             Vertx.vertx(), WebClientOptions().setUserAgent(config.userAgent).setKeepAlive(config.keepAlive)
         )

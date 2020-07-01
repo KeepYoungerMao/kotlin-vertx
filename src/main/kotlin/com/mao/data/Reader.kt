@@ -2,10 +2,8 @@ package com.mao.data
 
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import com.fasterxml.jackson.module.kotlin.readValue
-import java.io.BufferedReader
-import java.io.IOException
-import java.io.InputStream
-import java.io.InputStreamReader
+import io.vertx.core.json.JsonObject
+import java.io.*
 import java.util.*
 
 /**
@@ -13,7 +11,18 @@ import java.util.*
  * Properties文件读取
  * json文件读取
  */
-object FileReader {
+object Reader {
+
+    /**
+     * 读取JDBC
+     */
+    fun readJDBC(path: String) : JsonObject {
+        val properties = getProperties(path)
+        if (properties.isEmpty) throw RuntimeException("properties is empty")
+        val res = JsonObject()
+        properties.forEach { k, v -> res.put(k.toString(),v.toString()) }
+        return res
+    }
 
     /**
      * 读取服务器数据
