@@ -1,4 +1,4 @@
-package com.mao.data
+package com.mao.service.auth
 
 /**
  * 客户端

@@ -1,4 +1,4 @@
-package com.mao.data
+package com.mao.service.his
 
 /**
  * 天气数据返回体

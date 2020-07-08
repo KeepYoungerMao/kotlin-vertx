@@ -1,4 +1,4 @@
-package com.mao.service
+package com.mao.service.his.sudoku
 
 /**
  * 数独解析

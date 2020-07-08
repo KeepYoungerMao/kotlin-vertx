@@ -1,4 +1,4 @@
-package com.mao.data
+package com.mao.service.data
 
 import com.mao.server.ApiServer
 

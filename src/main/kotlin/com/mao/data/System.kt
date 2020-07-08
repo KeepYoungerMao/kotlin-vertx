@@ -2,6 +2,7 @@ package com.mao.data
 
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import com.fasterxml.jackson.module.kotlin.readValue
+import com.mao.util.Reader
 import com.mao.util.SU
 import com.mao.util.Secret
 import kotlin.system.exitProcess

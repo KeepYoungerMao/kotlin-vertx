@@ -1,6 +1,5 @@
 package com.mao.sql
 
-import com.mao.data.Response.ok
 import com.mao.server.ApiServer
 import io.vertx.core.AsyncResult
 import io.vertx.core.Future
@@ -12,7 +11,7 @@ interface Query {
         val INSTANCE: Query by lazy { QueryImpl() }
     }
 
-    fun execute(query: String, single: Boolean, commit: Boolean, handler: Handler<AsyncResult<String>>)
+    fun execute(query: String, single: Boolean, commit: Boolean, handler: Handler<AsyncResult<Any>>)
 
 }
 
@@ -37,20 +36,15 @@ class QueryImpl : Query {
      *      需要执行提交操作。此时返回成功或失败的信息提示数据
      * 返回数据统一为ResponseData类型的json字符串。
      */
-    override fun execute(query: String, single: Boolean, commit: Boolean, handler: Handler<AsyncResult<String>>) {
+    override fun execute(query: String, single: Boolean, commit: Boolean, handler: Handler<AsyncResult<Any>>) {
         ApiServer.jdbcClient.getConnection { res -> kotlin.run {
             if (res.succeeded()) {
                 val connection = res.result()
                 if (commit) {
+                    connection.setAutoCommit(true) {}
                     connection.update(query) { update -> kotlin.run {
                         if (update.succeeded()) {
-                            connection.commit { status -> kotlin.run {
-                                if (status.succeeded()) {
-                                    handler.handle(Future.succeededFuture(ok("process completed successfully.")))
-                                } else {
-                                    handler.handle(Future.failedFuture("commit failed."))
-                                }
-                            }}
+                            handler.handle(Future.succeededFuture("process completed successfully."))
                         } else {
                             handler.handle(Future.failedFuture("update or save data filed."))
                         }
@@ -60,14 +54,14 @@ class QueryImpl : Query {
                         if (result.succeeded()) {
                             val resultRows = result.result().rows
                             if (resultRows.isEmpty()) {
-                                handler.handle(Future.succeededFuture(ok(null)))
+                                handler.handle(Future.succeededFuture(null))
                             } else {
                                 if (single) {
-                                    handler.handle(Future.succeededFuture(ok(resultRows[0].map)))
+                                    handler.handle(Future.succeededFuture(resultRows[0].map))
                                 } else {
                                     val list = ArrayList<Map<String, Any>>()
                                     resultRows.forEach { e -> list.add(e.map) }
-                                    handler.handle(Future.succeededFuture(ok(list)))
+                                    handler.handle(Future.succeededFuture(list))
                                 }
                             }
                         } else {

@@ -1,8 +1,6 @@
-package com.mao.sql
+package com.mao.service.data
 
-import com.mao.data.*
-import com.mao.data.DataTableUtil.getTable
-import com.mao.type.DataType
+import com.mao.service.data.DataTableUtil.getTable
 import io.vertx.core.MultiMap
 import io.vertx.core.json.JsonArray
 import io.vertx.core.json.JsonObject
@@ -13,6 +11,10 @@ import io.vertx.core.json.JsonObject
  * 【注】：参数为字符串时需添加：''
  */
 abstract class SqlBuilder {
+
+    companion object {
+        val INSTANCE: SqlBuilder by lazy { SqlBuilderExecute() }
+    }
 
     //根据id（表主键、或次级表对应的主表的主键（如tt_book_chapter的父id：book_id））查询，list表示是否为多条数据
     abstract fun dataSearch(p: String?, table: DataTable, list: Boolean) : String
@@ -25,7 +27,7 @@ abstract class SqlBuilder {
     //数据更新
     abstract fun dataUpdate(obj: JsonObject, table: DataTable) : String
     //字典数据
-    abstract fun dataDict(type: DataType) : String
+    abstract fun dataDict(type: String) : String
 
 
     //古籍详情SQL

@@ -1,8 +1,5 @@
-package com.mao.sql
+package com.mao.service.data
 
-import com.mao.data.Column
-import com.mao.data.DataTable
-import com.mao.type.DataType
 import com.mao.server.ApiServer
 import com.mao.util.SU
 import io.vertx.core.MultiMap
@@ -328,8 +325,8 @@ class SqlBuilderExecute : SqlBuilder() {
      * 数据分类数据都以数据类型分类，每个数据类型都有一个或多个分类类型，每个类型下面又多个类型值
      * @param type 数据分类类型
      */
-    override fun dataDict(type: DataType) : String {
-        return "SELECT * FROM tt_data_dict WHERE `data` = '${type.name}'"
+    override fun dataDict(type: String) : String {
+        return "SELECT * FROM tt_data_dict WHERE `data` = '$type'"
     }
 
     private fun tooLong(name: String) : String = "param $name is too long."
