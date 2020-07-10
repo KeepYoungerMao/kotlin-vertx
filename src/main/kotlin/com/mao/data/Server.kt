@@ -13,6 +13,7 @@ class Server(properties: Properties) {
     val description: String = properties.getProperty("server.description")
     val ip: String = properties.getProperty("server.ip")
     val port: Int = properties.getProperty("server.port").toInt()
+    val authorize: Boolean = properties.getProperty("server.authorize").toBoolean()
     val start: Long = System.currentTimeMillis()
 }
 

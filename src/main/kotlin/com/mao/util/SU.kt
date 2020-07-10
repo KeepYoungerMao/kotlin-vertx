@@ -90,4 +90,6 @@ object SU {
         return null
     }
 
+    fun now() : Long = System.currentTimeMillis()
+
 }

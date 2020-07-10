@@ -5,7 +5,7 @@
 
     <groupId>com.mao</groupId>
     <artifactId>kotlin-vertx</artifactId>
-    <version>1.01-B</version>
+    <version>1.21-B</version>
     <packaging>jar</packaging>
 
     <name>keep younger</name>

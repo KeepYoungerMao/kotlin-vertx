@@ -1,18 +1,12 @@
 package com.mao.server
 
 import com.mao.data.*
-import com.mao.service.AuthHandler
 import com.mao.service.BaseService
-import com.mao.service.ErrorHandler
+import com.mao.service.RootService
 import com.mao.service.auth.AuthClient
 import com.mao.service.auth.AuthService
+import com.mao.service.data.DataService
 import com.mao.service.data.DataTable
-import com.mao.service.data.bjx.BjxService
-import com.mao.service.data.book.BookService
-import com.mao.service.data.buddhist.BuddhistService
-import com.mao.service.data.live.LiveService
-import com.mao.service.data.movie.MovieService
-import com.mao.service.data.pic.PicService
 import com.mao.service.his.bd.IPAddressService
 import com.mao.service.his.sudoku.SudokuService
 import com.mao.service.his.weather.WeatherService
@@ -29,7 +23,7 @@ import io.vertx.ext.web.handler.BodyHandler
 class ApiServer : AbstractVerticle() {
 
     companion object {
-        private val server: Server = Reader.readServer("/config/server.properties")
+        val server: Server = Reader.readServer("/config/server.properties")
         val authClient: MutableList<AuthClient> = Reader.readClient("/config/client.json")
         val dataTable: MutableList<DataTable> = Reader.readTable("/config/data_table.json")
         private val config: Config = Reader.readConfig("/config/config.properties")
@@ -43,25 +37,13 @@ class ApiServer : AbstractVerticle() {
     override fun start() {
         val router = Router.router(vertx)
         router.route("/").handler { BaseService().ok(it, server) }
-        router.route().handler(AuthHandler.create())
-        router.route("/oauth/:type").handler(AuthService.create())
-        router.mountSubRouter("/api/data",dataRouter())
+        router.route().handler(RootService())
+        if (server.authorize)
+            router.route("/oauth/:type").handler(AuthService.create())
+        router.route("/api/data/:data/:type").handler(BodyHandler.create()).handler(DataService.create())
         router.mountSubRouter("/api/his",hisRouter())
-        router.errorHandler(404, ErrorHandler.created(404))
-        router.errorHandler(405, ErrorHandler.created(405))
-        router.errorHandler(500, ErrorHandler.created(500))
+        errorAdvise(router)
         vertx.createHttpServer().requestHandler(router).listen(server.port)
-    }
-
-    private fun dataRouter() : Router {
-        val router = Router.router(vertx)
-        router.route("/bjx/:type").handler(BodyHandler.create()).handler(BjxService.create())
-        router.route("/book/:type").handler(BodyHandler.create()).handler(BookService.create())
-        router.route("/buddhist/:type").handler(BodyHandler.create()).handler(BuddhistService.create())
-        router.route("/live/:type").handler(BodyHandler.create()).handler(LiveService.create())
-        router.route("/movie/:type").handler(BodyHandler.create()).handler(MovieService.create())
-        router.route("/pic/:type").handler(BodyHandler.create()).handler(PicService.create())
-        return router
     }
 
     private fun hisRouter() : Router {
@@ -70,6 +52,22 @@ class ApiServer : AbstractVerticle() {
         router.route("/weather").handler(WeatherService.create())
         router.route("/sudoku").handler(BodyHandler.create()).handler(SudokuService.create())
         return router
+    }
+
+    private fun errorAdvise(router: Router) {
+        router.errorHandler(404) { if (!it.response().ended()) BaseService().no(it) }
+        router.errorHandler(405) { if (!it.response().ended()) BaseService().refuse(it) }
+        router.errorHandler(500) {ctx -> kotlin.run {
+            if (!ctx.response().ended()) {
+                val e = ctx.failure()
+                if (null != e && e is SecurityException)
+                    BaseService().auth(ctx,e.message?:"permission error")
+                else {
+                    e?.printStackTrace()
+                    BaseService().err(ctx, "request error")
+                }
+            }
+        }}
     }
 
 }

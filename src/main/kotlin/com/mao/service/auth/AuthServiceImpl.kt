@@ -1,18 +1,10 @@
 package com.mao.service.auth
 
-import com.mao.server.ApiServer
 import com.mao.service.BaseService
 import com.mao.util.SU
 import io.vertx.ext.web.RoutingContext
 
 class AuthServiceImpl : AuthService, BaseService() {
-
-    //clientId : authToken
-    private val cachedAuth: MutableMap<String, AuthToken> = HashMap()
-    //access_token : clientId
-    private val cachedToken: MutableMap<String, String> = HashMap()
-    //refresh_token : clientId
-    private val cachedRefresh: MutableMap<String, String> = HashMap()
 
     companion object {
         const val CLIENT_ID = "client_id"
@@ -121,10 +113,6 @@ class AuthServiceImpl : AuthService, BaseService() {
         }
     }
 
-    private fun getClient(id: String) : AuthClient? {
-        ApiServer.authClient.forEach { if (it.client_id == id) return it }
-        return null
-    }
     private fun getToken(expire: Long) : AuthToken {
         return AuthToken(SU.randomSting(32), SU.randomSting(32), expire, timeStamp())
     }
