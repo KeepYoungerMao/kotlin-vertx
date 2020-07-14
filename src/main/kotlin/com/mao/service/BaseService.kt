@@ -19,7 +19,6 @@ open class BaseService {
         //refresh_token : clientId
         val cachedRefresh: MutableMap<String, String> = HashMap()
 
-        const val ID = "id"
         const val AUTHORIZATION = "Authorization"
         const val TYPE_ERR = "type error. no this type of resource data."
         const val INVALID_AUTHORIZATION = "invalid Authorization code."

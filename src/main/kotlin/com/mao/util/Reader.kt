@@ -5,7 +5,6 @@ import com.fasterxml.jackson.module.kotlin.readValue
 import com.mao.service.auth.AuthClient
 import com.mao.data.Config
 import com.mao.data.Server
-import com.mao.service.data.DataTable
 import io.vertx.core.json.JsonObject
 import java.io.*
 import java.util.*
@@ -40,17 +39,6 @@ object Reader {
      */
     fun readConfig(path: String) : Config {
         return Config(getProperties(path))
-    }
-
-    /**
-     * 读取表数据
-     */
-    fun readTable(path: String) : MutableList<DataTable> {
-        try {
-            return jacksonObjectMapper().readValue(getString(path))
-        } catch (e: Exception) {
-            throw RuntimeException("read data table error")
-        }
     }
 
     /**

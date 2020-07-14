@@ -5,8 +5,9 @@ import com.mao.service.BaseService
 import com.mao.service.RootService
 import com.mao.service.auth.AuthClient
 import com.mao.service.auth.AuthService
+import com.mao.service.data.DataCache
 import com.mao.service.data.DataService
-import com.mao.service.data.DataTable
+import com.mao.service.data.entity.DataTable
 import com.mao.service.his.bd.IPAddressService
 import com.mao.service.his.sudoku.SudokuService
 import com.mao.service.his.weather.WeatherService
@@ -25,9 +26,9 @@ class ApiServer : AbstractVerticle() {
     companion object {
         val server: Server = Reader.readServer("/config/server.properties")
         val authClient: MutableList<AuthClient> = Reader.readClient("/config/client.json")
-        val dataTable: MutableList<DataTable> = Reader.readTable("/config/data_table.json")
-        private val config: Config = Reader.readConfig("/config/config.properties")
         val jdbcClient: JDBCClient = JDBCClient.createShared(Vertx.vertx(), Reader.readJDBC("/config/jdbc.properties"))
+        val dataTable: MutableList<DataTable> = ArrayList()
+        private val config: Config = Reader.readConfig("/config/config.properties")
         val webClient: WebClient = WebClient.create(
             Vertx.vertx(), WebClientOptions().setUserAgent(config.userAgent).setKeepAlive(config.keepAlive)
         )
@@ -35,6 +36,7 @@ class ApiServer : AbstractVerticle() {
     }
 
     override fun start() {
+        DataCache.initData()
         val router = Router.router(vertx)
         router.route("/").handler { BaseService().ok(it, server) }
         router.route().handler(RootService())
