@@ -1,5 +1,6 @@
 package com.mao.service.auth
 
+import com.mao.entity.auth.AuthToken
 import com.mao.service.BaseService
 import com.mao.util.SU
 import io.vertx.ext.web.RoutingContext
@@ -114,7 +115,12 @@ class AuthServiceImpl : AuthService, BaseService() {
     }
 
     private fun getToken(expire: Long) : AuthToken {
-        return AuthToken(SU.randomSting(32), SU.randomSting(32), expire, timeStamp())
+        return AuthToken(
+            SU.randomSting(32),
+            SU.randomSting(32),
+            expire,
+            timeStamp()
+        )
     }
     private fun timeStamp() : Long = System.currentTimeMillis()/1000
 

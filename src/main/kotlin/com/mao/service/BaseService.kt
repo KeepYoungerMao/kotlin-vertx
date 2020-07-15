@@ -1,11 +1,11 @@
 package com.mao.service
 
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
-import com.mao.data.ResEnum
-import com.mao.data.ResponseData
+import com.mao.entity.response.ResEnum
+import com.mao.entity.response.ResponseData
 import com.mao.server.ApiServer
-import com.mao.service.auth.AuthClient
-import com.mao.service.auth.AuthToken
+import com.mao.entity.auth.AuthClient
+import com.mao.entity.auth.AuthToken
 import com.mao.util.SU
 import io.vertx.ext.web.RoutingContext
 
@@ -19,6 +19,7 @@ open class BaseService {
         //refresh_token : clientId
         val cachedRefresh: MutableMap<String, String> = HashMap()
 
+        const val ID = "id"
         const val AUTHORIZATION = "Authorization"
         const val TYPE_ERR = "type error. no this type of resource data."
         const val INVALID_AUTHORIZATION = "invalid Authorization code."
@@ -99,11 +100,12 @@ open class BaseService {
     }
 
     fun auth(ctx: RoutingContext, msg: String) {
-        ctx.response().end(json(msg,ResEnum.PERMISSION))
+        ctx.response().end(json(msg, ResEnum.PERMISSION))
     }
 
     fun no(ctx: RoutingContext) {
-        ctx.response().end(json("no resource path: ${ctx.request().path()}",ResEnum.NOTFOUND))
+        ctx.response().end(json("no resource path: ${ctx.request().path()}",
+            ResEnum.NOTFOUND))
     }
 
     /**
@@ -111,7 +113,13 @@ open class BaseService {
      * 内联方法
      */
     private inline fun <reified T> json(data: T, type: ResEnum) : String {
-        return jacksonObjectMapper().writeValueAsString(ResponseData(type.code, type.msg, data))
+        return jacksonObjectMapper().writeValueAsString(
+            ResponseData(
+                type.code,
+                type.msg,
+                data
+            )
+        )
     }
 
 }

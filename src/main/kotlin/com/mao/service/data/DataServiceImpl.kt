@@ -2,15 +2,23 @@ package com.mao.service.data
 
 import com.mao.server.ApiServer
 import com.mao.service.BaseService
-import com.mao.service.data.entity.DataColumn
-import com.mao.service.data.entity.DataTable
-import com.mao.service.data.entity.DataType
+import com.mao.entity.data.DataColumn
+import com.mao.entity.data.DataTable
+import com.mao.entity.data.DataType
 import com.mao.sql.Query
 import com.mao.util.SU
 import io.vertx.core.Handler
 import io.vertx.core.http.HttpMethod
+import io.vertx.core.json.JsonArray
+import io.vertx.core.json.JsonObject
 import io.vertx.ext.web.RoutingContext
+import kotlin.IllegalArgumentException
 
+/**
+ * data类型数据的增删改查请求处理
+ * 采用统一格式的请求方式
+ * 要求data数据类型遵循格式要求
+ */
 class DataServiceImpl : DataService, BaseService() {
 
     companion object {
@@ -28,6 +36,32 @@ class DataServiceImpl : DataService, BaseService() {
     /**
      * 主表支持：列表搜索、分页查询、详情查询、字典查询
      * 副表支持：列表查询、详情查询
+     * 保存支持：单个保存，多个保存
+     * 更新支持：单个更新
+     * 删除支持：暂时不开放
+     *
+     * 请求根据 HttpMethod进行区分：
+     * GET      查询
+     * POST     更新
+     * PUT      保存
+     * DELETE   删除
+     *
+     * 数据表结构约束：
+     * 表内必须含有字段：
+     * id       作为主键（long型），由系统生成
+     * update   作为更新标识（long型），由系统生成，13位时间戳
+     * delete   删除标识（Boolean型），由系统生成，默认false
+     * 详情查询为根据主键id查询，但没有硬性规定，但趋向于主键id
+     * 更新请求必须根据主键id进行更新，硬性规定
+     * 表字段类型必须再规定范围内（以MYSQL为例）：
+     * DataType类型       MySQL类型       java类型
+     * INT                int(10)         Integer
+     * BIGINT             bigint(20)      Long
+     * STRING             varchar(..)     String
+     * TEXT               text            String
+     * UPDATE             bigint(13)      Long
+     * BOOLEAN            tinyint(1)      Boolean
+     * 其中字段长度可根据自身长度设置，text,mediumtext,longBlog等都归为TEXT，通过长度设置来限制
      */
     override fun handle(ctx: RoutingContext) {
         val data: String = ctx.pathParam(DATA)
@@ -85,23 +119,274 @@ class DataServiceImpl : DataService, BaseService() {
 
     /**
      * 保存数据
+     * INSERT INTO [table] ( columns ) VALUE ( ... )
+     * 保存的SQL语句会对所有字段进行保存，没有传输的字段如果是必须的则抛出异常，如果非必须则放默认值
+     * 默认：STRING：null，TEXT：null，INT：0，BIGINT：0，BOOLEAN：0
+     * 对于数据库有设置默认值的情况不予考虑
      */
     private fun saveSrc(ctx: RoutingContext, table: DataTable) {
-        TODO("on building...")
+        //获取body数据是格式错误会抛出DecodeException
+        val obj: JsonObject? = try {
+            ctx.bodyAsJson
+        } catch (e: Exception) {
+            null
+        }
+        if (null == obj)
+            err(ctx,"not found request body data or it is not a object data.")
+        else {
+            //拼接保存语句后部分
+            val sqlEnd = saveSqlEnd(obj, table)
+            val sqlColumn = saveSqlColumns(table)
+            val sql = "INSERT INTO ${table.table}$sqlColumn VALUE $sqlEnd"
+            //执行语句
+            sqlResult(ctx,sql,single = true,commit = true)
+        }
     }
 
     /**
      * 保存多个数据
      */
     private fun saveList(ctx: RoutingContext, table: DataTable) {
-        TODO("on building...")
+        //获取body数据时格式错误会抛出DecodeException
+        val array: JsonArray? = try {
+            ctx.bodyAsJsonArray
+        } catch (e: Exception) { null }
+        if (null == array || array.isEmpty)
+            err(ctx, "not found request body or it is not a objectArray data")
+        else {
+            //多个保存语句进行拼接
+            val size = array.size()
+            var sqlEnd = ""
+            for (i in 0 until size) {
+                sqlEnd += saveSqlEnd(array.getJsonObject(i),table)
+                if (i != size - 1)
+                    sqlEnd += ","
+            }
+            val sqlColumn = saveSqlColumns(table)
+            val sql = "INSERT INTO ${table.table}$sqlColumn VALUES $sqlEnd"
+            //执行语句
+            sqlResult(ctx,sql,single = false,commit = true)
+        }
+    }
+
+    /**
+     * 保存SQL语句的后面部分
+     * 循环table.columns，从JsonObject获取值进行拼接
+     * 拼接过程中对字段进行判断
+     */
+    private fun saveSqlEnd(obj: JsonObject, table: DataTable) : String {
+        val sb = StringBuilder()
+        sb.append("(")
+        table.columns.forEach { column -> kotlin.run {
+            val name:String = column.column
+            when (column.type) {
+                //int类型：默认0，如果字段必须，不传或传入0则抛异常（不考虑字段是否允许0值）
+                DataType.INT -> {
+                    val value: Int = if (column.save)
+                        try {
+                            obj.getInteger(name) !!
+                        } catch (e: Exception) {
+                            necessary(name)
+                            0
+                        }
+                    else
+                        obj.getInteger(name,0)
+                    if (column.save && value == 0)
+                        necessary(name)
+                    sb.append("$value,")
+                }
+                //long类型：默认0，如果字段必须，不传或传入0则抛异常（不考虑字段是否允许0值）
+                //所有主键id名【id】，且为long型字段，由系统生成。
+                DataType.BIGINT -> {
+                    if (name == ID) {
+                        val id = ApiServer.idBuilder.nextId()
+                        sb.append("$id,")
+                    } else {
+                        val value: Long = if (column.save)
+                            try {
+                                obj.getLong(name) !!
+                            } catch (e: Exception) {
+                                necessary(name)
+                                0L
+                            }
+                        else
+                            obj.getLong(name,0L)
+                        if (column.save && value == 0L)
+                            necessary(name)
+                        sb.append("$value,")
+                    }
+                }
+                //String类型：默认null，如果字段必须，不传或传空则抛出异常，长度超出设定值抛出异常
+                DataType.STRING -> {
+                    val value: String? = if (column.save) {
+                        val a = try {
+                            obj.getString(name)!!
+                        } catch (e: Exception) {
+                            necessary(name)
+                            null
+                        }
+                        when {
+                            null == a || a.isEmpty() -> {
+                                necessary(name)
+                                null
+                            }
+                            (a.length > column.len) -> {
+                                tooLong(name)
+                                null
+                            }
+                            else -> a
+                        }
+                    } else
+                        obj.getString(name,null)
+                    if (null == value)
+                        sb.append("NULL,")
+                    else
+                        sb.append("'$value',")
+                }
+                //String类型，文本字段，与String相同判断，不过长度比较的是byte大小
+                DataType.TEXT -> {
+                    val value: String? = if (column.save) {
+                        val a = try {
+                            obj.getString(name) !!
+                        } catch (e: Exception) {
+                            necessary(name)
+                            null
+                        }
+                        when {
+                            null == a || a.isEmpty() -> {
+                                necessary(name)
+                                null
+                            }
+                            large(a,column.len) -> {
+                                tooLong(name)
+                                null
+                            }
+                            else -> a
+                        }
+                    } else
+                        obj.getString(name,null)
+                    if (null == value)
+                        sb.append("NULL,")
+                    else
+                        sb.append("'$value',")
+                }
+                //特殊字段，时间戳，保存时直接赋值，不做判断
+                DataType.UPDATE -> sb.append("${SU.now()},")
+                //布尔值，传错或不传不做处理，使用默认值
+                DataType.BOOLEAN -> {
+                    val value: Boolean = if (column.save)
+                        try {
+                            obj.getBoolean(name) !!
+                        } catch (e: Exception) {
+                            necessary(name)
+                            false
+                        }
+                    else
+                        obj.getBoolean(name,column.len == 1)
+                    sb.append("$value,")
+                }
+            }
+        } }
+        val s = sb.toString()
+        val t = s.substring(0,s.lastIndex)
+        return "$t)"
+    }
+
+    /**
+     * 保存sql语句的保存字段部分
+     * 循环table，取所有字段字段
+     */
+    private fun saveSqlColumns(table: DataTable) : String {
+        val sb = StringBuilder()
+        sb.append("(")
+        table.columns.forEach { sb.append("`${it.column}`,") }
+        val sql = sb.toString()
+        val sql2 = sql.substring(0,sql.lastIndex)
+        return "$sql2)"
     }
 
     /**
      * 更新数据
      */
     private fun updateSrc(ctx: RoutingContext, table: DataTable) {
-        TODO("on building...")
+        //获取body数据是格式错误会抛出DecodeException
+        val obj: JsonObject? = try {
+            ctx.bodyAsJson
+        } catch (e: Exception) {
+            null
+        }
+        if (null == obj)
+            err(ctx,"not found request body data or it is not a object data.")
+        else {
+            val sb = StringBuilder()
+            var where = ""
+            var update = ""
+            for (column in table.columns) {
+                val name = column.column
+                when (column.type) {
+                    DataType.INT -> {
+                        val value: Int? = obj.getInteger(name,null)
+                        if (null != value) {
+                            if (value <= 0)
+                                invalid(name)
+                            else
+                                sb.append("`$name` = $value, ")
+                        }
+                    }
+                    DataType.BIGINT -> {
+                        val value: Long? = obj.getLong(name,null)
+                        if (name == ID) {
+                            if (null == value || value <= 0)
+                                invalid(name)
+                            else
+                                where = "WHERE `$name` = $value"
+                        } else {
+                            if (null != value) {
+                                if (value <= 0)
+                                    invalid(name)
+                                else
+                                    sb.append("`$name` = $value, ")
+                            }
+                        }
+                    }
+                    //更新时支持更新为空字符串，但不允许更新null
+                    DataType.STRING -> {
+                        val value: String? = obj.getString(name,null)
+                        if (null != value) {
+                            if (value.length > column.len)
+                                tooLong(name)
+                            else
+                                sb.append("`$name` = '$value', ")
+                        }
+                    }
+                    DataType.TEXT -> {
+                        val value: String? = obj.getString(name,null)
+                        if (null != value) {
+                            if (value.toByteArray().size > column.len.times(1024))
+                                tooLong(name)
+                            else
+                                sb.append("`$name` = '$value', ")
+                        }
+                    }
+                    DataType.BOOLEAN -> {
+                        val value: Boolean? = obj.getBoolean(name,null)
+                        if (null != value) {
+                            sb.append("`$name` = $value, ")
+                        }
+                    }
+                    DataType.UPDATE -> update = "`$name` = ${SU.now()}"
+                }
+            }
+            when {
+                sb.isEmpty() -> err(ctx,"no data to update.")
+                where == "" -> err(ctx,"need primary key[ id ] while updating data.")
+                else -> {
+                    val sql = "UPDATE ${table.table} SET $sb $update $where"
+                    //执行语句
+                    sqlResult(ctx,sql,single = true,commit = true)
+                }
+            }
+        }
     }
 
     /**
@@ -184,7 +469,7 @@ class DataServiceImpl : DataService, BaseService() {
             else {
                 val sqlC = sb.toString()
                 val sqlD = sqlC.substring(0,sqlC.length.dec())
-                val sql = "SELECT $sqlD FROM ${table.table} WHERE $sqlK LIMIT $row"
+                val sql = "SELECT $sqlD FROM ${table.table} WHERE $sqlK ${orderSql(table)} LIMIT $row"
                 sqlResult(ctx,sql,single = false,commit = false)
             }
         } else {
@@ -199,7 +484,7 @@ class DataServiceImpl : DataService, BaseService() {
                 } }
                 val sqlC = sb.toString()
                 val sqlD = sqlC.substring(0,sqlC.length.dec())
-                val sql = "SELECT $sqlD FROM ${table.table} WHERE `${table.main_id}` = $pid"
+                val sql = "SELECT $sqlD FROM ${table.table} WHERE `${table.main_id}` = $pid ${orderSql(table)}"
                 sqlResult(ctx,sql,single = false,commit = false)
             }
         }
@@ -258,9 +543,9 @@ class DataServiceImpl : DataService, BaseService() {
         }
         val pageC = if (page < 1) 0 else page.dec().times(row)
         val sql = if (sqlK == "")
-            "SELECT $sqlD FROM ${table.table} LIMIT $pageC,$row"
+            "SELECT $sqlD FROM ${table.table} ${orderSql(table)} LIMIT $pageC,$row"
         else
-            "SELECT $sqlD FROM ${table.table} WHERE $sqlK LIMIT $$pageC,$row"
+            "SELECT $sqlD FROM ${table.table} WHERE $sqlK ${orderSql(table)} LIMIT $pageC,$row"
         sqlResult(ctx,sql,single = false,commit = false)
     }
 
@@ -274,15 +559,28 @@ class DataServiceImpl : DataService, BaseService() {
     }
 
     /**
+     * 排序部分SQL
+     */
+    private fun orderSql(table: DataTable) : String {
+        var orderSql = ""
+        for (column: DataColumn in table.columns) {
+            when (column.order) {
+                1 -> orderSql += "${column.column} ASC,"
+                2 -> orderSql += "${column.column} DESC,"
+            }
+        }
+        return if (orderSql == "")
+            ""
+        else
+            "ORDER BY ${orderSql.substring(0,orderSql.length.dec())}"
+    }
+
+    /**
      * 获取表数据
      */
     private fun getDataTable(name: String) : DataTable? {
         ApiServer.dataTable.forEach { table -> if (table.name == name) return table }
         return null
-    }
-
-    private fun sqlPf(sql: String) {
-        println("sql execute: $sql")
     }
 
     /**
@@ -306,6 +604,36 @@ class DataServiceImpl : DataService, BaseService() {
      */
     private fun noOpen(ctx: RoutingContext) {
         refuse(ctx,"The service is temporarily unavailable.")
+    }
+
+    /**
+     * 异常抛出，输入的字段值缺失或错误，用于保存SQL
+     */
+    private fun necessary(name: String) {
+        throw IllegalArgumentException("column[ $name ] is necessary while saving data. or it it wrong value")
+    }
+
+    /**
+     * 异常抛出，输入的字段值错误，用于更新SQL
+     */
+    private fun invalid(name: String) {
+        throw IllegalArgumentException("column[ $name ] is necessary while updating data. or it it wrong value")
+    }
+
+    /**
+     * 异常抛出，字段值太长，再检查字符串类型字段时抛出
+     */
+    private fun tooLong(name: String) {
+        throw IllegalArgumentException("column[ $name ] is too long, cannot execute this data.")
+    }
+
+    /**
+     * 判断字符串类型字段值的大小是否大于kb值
+     * 比较byte大小
+     */
+    private fun large(str: String, kb: Int): Boolean {
+        val a = str.toByteArray().size
+        return a > (kb.times(1024))
     }
 
     /**

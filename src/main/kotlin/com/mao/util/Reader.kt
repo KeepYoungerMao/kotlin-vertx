@@ -2,9 +2,8 @@ package com.mao.util
 
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import com.fasterxml.jackson.module.kotlin.readValue
-import com.mao.service.auth.AuthClient
-import com.mao.data.Config
-import com.mao.data.Server
+import com.mao.entity.auth.AuthClient
+import com.mao.entity.Server
 import io.vertx.core.json.JsonObject
 import java.io.*
 import java.util.*
@@ -32,13 +31,6 @@ object Reader {
      */
     fun readServer(path: String) : Server {
         return Server(getProperties(path))
-    }
-
-    /**
-     * 读取服务配置参数
-     */
-    fun readConfig(path: String) : Config {
-        return Config(getProperties(path))
     }
 
     /**

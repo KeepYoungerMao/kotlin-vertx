@@ -1,15 +1,15 @@
-package com.mao.service.data
+package com.mao.init
 
 import com.mao.server.ApiServer
-import com.mao.service.data.entity.DataColumn
-import com.mao.service.data.entity.DataTable
-import com.mao.service.data.entity.DataType
+import com.mao.entity.data.DataColumn
+import com.mao.entity.data.DataTable
+import com.mao.entity.data.DataType
 import io.vertx.core.json.JsonObject
 
 object DataCache {
 
     private const val TABLE_SQL = "SELECT `id`,`name`,`table`,`main`,`main_id` FROM data_root_table"
-    private const val COLUMN_SQL = "SELECT `id`,pid,`column`,`type`,len,src_show,src_key,list_show,list_key,page_show,page_key,`order` FROM data_root_column"
+    private const val COLUMN_SQL = "SELECT `id`,pid,`column`,`type`,len,src_show,src_key,list_show,list_key,page_show,page_key,`order`,`save` FROM data_root_column"
 
     fun initData()  {
         initDataTables()
@@ -93,10 +93,11 @@ object DataCache {
                     map["list_key"] as Boolean,
                     map["page_show"] as Boolean,
                     map["page_key"] as Boolean,
-                    map["order"] as Boolean
+                    map["order"] as Int,
+                    map["save"] as Boolean
                 )
                 var add = false
-                for (table in ApiServer.dataTable) {
+                for (table: DataTable in ApiServer.dataTable) {
                     if (table.id == column.pid) {
                         table.columns.add(column)
                         add = true
@@ -112,15 +113,7 @@ object DataCache {
     }
 
     private fun successPl() {
-        println(
-            """ 
-             ____   ____   ____   ____   ____   ____ 
-            /_   | /_   | /_   | /_   | /_   | /_   |
-             |   |  |   |  |   |  |   |  |   |  |   |
-             |   |  |   |  |   |  |   |  |   |  |   |
-             |___|  |___|  |___|  |___|  |___|  |___|
-            """.trimIndent()
-        )
+        println(ApiServer.server)
     }
 
 }

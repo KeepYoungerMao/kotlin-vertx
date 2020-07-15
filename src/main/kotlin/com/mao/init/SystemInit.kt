@@ -1,16 +1,12 @@
-package com.mao.data
+package com.mao.init
 
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import com.fasterxml.jackson.module.kotlin.readValue
+import com.mao.entity.Licence
 import com.mao.util.Reader
 import com.mao.util.SU
 import com.mao.util.Secret
 import kotlin.system.exitProcess
-
-/**
- * licence
- */
-data class Licence(val app_id: String, val app_name: String, val start: Long, val time: Long, val key: String)
 
 object SystemInit {
 

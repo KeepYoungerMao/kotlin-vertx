@@ -1,6 +1,6 @@
 package com.mao.util
 
-import com.mao.data.SystemInit
+import com.mao.init.SystemInit
 
 /**
  * 常用的字符串类处理和判断

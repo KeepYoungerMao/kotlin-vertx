@@ -1,4 +1,4 @@
-package com.mao.service.auth
+package com.mao.entity.auth
 
 /**
  * 客户端
@@ -13,11 +13,3 @@ data class AuthClient(val client_id: String,
                       val ips: MutableList<String>,
                       val access_token_validation: Long,
                       val refresh_token_validation: Long)
-
-/**
- * token
- */
-data class AuthToken(val access_token: String,
-                       val refresh_token: String,
-                       var expire: Long,
-                       val timestamp: Long)

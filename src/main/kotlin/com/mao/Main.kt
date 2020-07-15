@@ -1,6 +1,6 @@
 package com.mao
 
-import com.mao.data.SystemInit
+import com.mao.init.SystemInit
 import com.mao.server.ApiServer
 import io.vertx.core.*
 import kotlin.system.measureTimeMillis

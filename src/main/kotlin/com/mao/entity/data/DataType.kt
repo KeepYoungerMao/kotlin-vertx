@@ -1,4 +1,4 @@
-package com.mao.service.data.entity
+package com.mao.entity.data
 
 enum class DataType {
     BIGINT,         //long
