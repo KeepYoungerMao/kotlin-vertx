@@ -1,7 +1,5 @@
 package com.mao.entity.data
 
-import com.mao.entity.data.DataColumn
-
 data class DataTable(
     val id: Long,                           //主键
     val name: String,                       //数据名
