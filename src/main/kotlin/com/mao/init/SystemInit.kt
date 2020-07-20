@@ -8,16 +8,21 @@ import com.mao.util.SU
 import com.mao.util.Secret
 import kotlin.system.exitProcess
 
+/**
+ * 系统初始化
+ */
 object SystemInit {
 
-    fun licence(key: String) {
-        if (key.isBlank() || key.length != 16) initError()
-        val data = Reader.readLicence("/LICENCE")
+    private const val SYSTEM_INIT = "MAOZX12345SYSTEM"
+    private const val LICENCE = "/LICENCE"
+
+    fun licence() {
+        val data = Reader.readLicence(LICENCE)
         if (data.isBlank()) initError()
         try {
-            val decrypt = Secret.decrypt(data, key)!!
+            val decrypt = Secret.decrypt(data, SYSTEM_INIT)!!
             val point = decrypt.length - 6
-            val res = Secret.decrypt(SU.dt(decrypt.substring(0,point)), key)!!
+            val res = Secret.decrypt(SU.dt(decrypt.substring(0,point)), SYSTEM_INIT)!!
             licence(jacksonObjectMapper().readValue(res),decrypt.substring(point))
         } catch (e: Exception) {
             initError()

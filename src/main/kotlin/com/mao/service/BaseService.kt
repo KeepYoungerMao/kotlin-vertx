@@ -6,6 +6,8 @@ import com.mao.entity.response.ResponseData
 import com.mao.server.ApiServer
 import com.mao.entity.auth.AuthClient
 import com.mao.entity.auth.AuthToken
+import com.mao.entity.log.RequestLog
+import com.mao.service.log.LogService
 import com.mao.util.SU
 import io.vertx.ext.web.RoutingContext
 
@@ -29,6 +31,8 @@ open class BaseService {
         const val CLIENT_LOCKED = "client locked."
         const val TOKEN_EXPIRED = "token expired."
     }
+
+    private val logService: LogService = LogService.INSTANCE
 
     /**
      * 授权
@@ -74,38 +78,69 @@ open class BaseService {
         return null
     }
 
+    /**
+     * 获取客户端
+     */
     protected fun getClient(id: String) : AuthClient? {
         ApiServer.authClient.forEach { if (it.client_id == id) return it }
         return null
     }
 
+    /**
+     * 成功返回
+     */
     fun ok(ctx: RoutingContext, data: Any) {
-        ctx.response().end(json(data, ResEnum.OK))
+        end(ctx,ResEnum.OK,data)
     }
 
+    /**
+     * 返回访问受限
+     */
     fun refuse(ctx: RoutingContext) {
         refuse(ctx,"request not allowed.")
     }
 
+    /**
+     * 访问受限
+     */
     fun refuse(ctx: RoutingContext, msg: String) {
-        ctx.response().end(json(msg, ResEnum.NOTALLOWED))
+        end(ctx,ResEnum.NOTALLOWED,msg)
     }
 
+    /**
+     * 错误返回
+     */
     fun err(ctx: RoutingContext, msg: String) {
-        ctx.response().end(json(msg, ResEnum.ERROR))
+        end(ctx,ResEnum.ERROR,msg)
     }
 
+    /**
+     * 无权限，抛出异常
+     */
     private fun auth(msg: String) {
         throw SecurityException(msg)
     }
 
+    /**
+     * 权限错误返回
+     */
     fun auth(ctx: RoutingContext, msg: String) {
-        ctx.response().end(json(msg, ResEnum.PERMISSION))
+        end(ctx,ResEnum.PERMISSION,msg)
     }
 
+    /**
+     * 地址错误
+     */
     fun no(ctx: RoutingContext) {
-        ctx.response().end(json("no resource path: ${ctx.request().path()}",
-            ResEnum.NOTFOUND))
+        end(ctx,ResEnum.NOTFOUND,"no resource path: ${ctx.request().path()}")
+    }
+
+    /**
+     * 统一返回方法，可在此执行统一的其他逻辑
+     */
+    private fun end(ctx: RoutingContext, resEnum: ResEnum, data: Any) {
+        log(ctx,resEnum.code)
+        ctx.response().end(json(data,resEnum))
     }
 
     /**
@@ -113,13 +148,25 @@ open class BaseService {
      * 内联方法
      */
     private inline fun <reified T> json(data: T, type: ResEnum) : String {
-        return jacksonObjectMapper().writeValueAsString(
-            ResponseData(
-                type.code,
-                type.msg,
-                data
-            )
-        )
+        return jacksonObjectMapper().writeValueAsString(ResponseData(type.code, type.msg, data))
+    }
+
+    /**
+     * 请求日志的保存
+     */
+    private fun log(ctx: RoutingContext, status: Int) {
+        val id = ApiServer.idBuilder.nextId()
+        val ip = ctx.request().remoteAddress().host()
+        val path = ctx.request().path()
+        val method = ctx.request().method().name
+        val params = SU.json(ctx.request().params())
+        val body = ctx.bodyAsString
+        val user = if (ApiServer.server.authorize) {
+            val code = ctx.request().getHeader(AUTHORIZATION)
+            cachedToken[code]
+        } else null
+        val log = RequestLog(id,ip,path,method,params,body,user,status,SU.date(),SU.now())
+        logService.saveRequestLog(log)
     }
 
 }

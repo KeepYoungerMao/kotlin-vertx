@@ -47,10 +47,13 @@ class QueryImpl : Query {
                                 handler.handle(Future.succeededFuture(null))
                             } else {
                                 if (single) {
-                                    handler.handle(Future.succeededFuture(resultRows[0].map))
+                                    val map = resultRows[0].map
+                                    correctData(map)
+                                    handler.handle(Future.succeededFuture(map))
                                 } else {
-                                    val list = ArrayList<Map<String, Any>>()
+                                    val list: MutableList<MutableMap<String, Any>> = ArrayList()
                                     resultRows.forEach { e -> list.add(e.map) }
+                                    correctData(list)
                                     handler.handle(Future.succeededFuture(list))
                                 }
                             }
@@ -65,6 +68,24 @@ class QueryImpl : Query {
                 handler.handle(Future.failedFuture("query database error."))
             }
         } }
+    }
+
+    /**
+     * 数据修正
+     * 将类型为Long型的数据转为String返回
+     * 主要防止Javascript不能识别16位以上的数字的问题
+     */
+    private fun correctData(map: MutableMap<String, Any>) {
+        map.forEach { (k, v) -> if (v is Long) map[k] = v.toString() }
+    }
+
+    /**
+     * 数据修正
+     * 将类型为Long型的数据转为String返回
+     * 主要防止Javascript不能识别16位以上的数字的问题
+     */
+    private fun correctData(list: MutableList<MutableMap<String, Any>>) {
+        list.forEach { correctData(it) }
     }
 
 }

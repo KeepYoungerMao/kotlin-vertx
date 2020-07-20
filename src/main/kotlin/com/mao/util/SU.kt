@@ -1,6 +1,9 @@
 package com.mao.util
 
+import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import com.mao.init.SystemInit
+import io.vertx.core.MultiMap
+import java.time.LocalDate
 
 /**
  * 常用的字符串类处理和判断
@@ -39,12 +42,24 @@ object SU {
         }
     }
 
+    /**
+     * 字符串转long
+     */
     fun toLong(str: String?) : Long = toLong(str,-1)
 
+    /**
+     * 判断字符串是否不为空
+     */
     private fun isNotEmpty(str: String?) : Boolean = null != str && str.isNotEmpty()
 
+    /**
+     * 判断字符串是否为空
+     */
     fun isEmpty(str: String?) : Boolean = !isNotEmpty(str)
 
+    /**
+     * 获取随机字符串
+     */
     fun randomSting(len: Int) : String {
         val array = CharArray(len)
         for (i in 0 until len)
@@ -90,6 +105,26 @@ object SU {
         return null
     }
 
+    /**
+     * 获取当前日期
+     * yyyy-MM-dd
+     */
+    fun date() : String = LocalDate.now().toString()
+
+    /**
+     * 获取当前时间戳
+     * 13位时间戳
+     */
     fun now() : Long = System.currentTimeMillis()
+
+    /**
+     * map转json
+     */
+    fun json(map: MultiMap) : String? {
+        if (map.isEmpty) return null
+        val res: MutableMap<String, String> = HashMap()
+        map.forEach { res[it.key] = it.value }
+        return jacksonObjectMapper().writeValueAsString(res)
+    }
 
 }

@@ -448,7 +448,7 @@ class DataServiceImpl : DataService, BaseService() {
                     //判断字段类型，数字类型参数和字符串类型参数需要分开做处理
                     when (a.type) {
                         DataType.INT, DataType.BIGINT -> "`${a.column}` = $kw"
-                        DataType.STRING, DataType.TEXT -> "`${a.column}` = '$kw'"
+                        DataType.STRING, DataType.TEXT -> "LOCATE('$kw',`${a.column}`) > 0 "
                         DataType.BOOLEAN -> {
                             if (kw.toUpperCase() == "TRUE")
                                 "`${a.column}` = TRUE"
@@ -645,6 +645,7 @@ class DataServiceImpl : DataService, BaseService() {
      * @param commit 是否需要提交，需要提交的表示为更新、保存、删除类型SQL语句
      */
     private fun sqlResult(ctx: RoutingContext, sql: String, single: Boolean, commit: Boolean) {
+        println("sql: $sql")
         query.execute(sql,single,commit,handler = Handler { res -> kotlin.run {
             if (res.succeeded()) {
                 ok(ctx,res.result())
