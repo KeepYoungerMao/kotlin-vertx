@@ -23,9 +23,9 @@ class LogServiceImpl : LogService {
     override fun saveRequestLog(log: RequestLog) {
         CompletableFuture.supplyAsync(Supplier<Unit> { kotlin.run {
             val sql = """
-                INSERT INTO sys_request_log(`id`,`ip`,`path`,`method`,`params`,`body`,`user`,`status`,`date`,`time`) 
-                VALUE (${log.id},'${log.ip}','${log.path}','${log.method}','${log.params}','${log.body}',
-                '${log.user}',${log.status},'${log.date}',${log.time})
+                INSERT INTO sys_request_log(`id`,`ip`,`path`,`method`,`params`,`body`,`user`,`status`,`time`) 
+                VALUE (${log.id},${log.ip},'${log.path}',${log.method},'${log.params}','${log.body}',
+                '${log.user}',${log.status},${log.time})
             """.trimIndent()
             query.execute(sql,single = true,commit = true,handler = Handler { res -> kotlin.run {
                 if (res.failed())

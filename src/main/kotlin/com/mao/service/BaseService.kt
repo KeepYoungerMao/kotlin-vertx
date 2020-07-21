@@ -9,6 +9,7 @@ import com.mao.entity.auth.AuthToken
 import com.mao.entity.log.RequestLog
 import com.mao.service.log.LogService
 import com.mao.util.SU
+import io.vertx.core.http.HttpMethod
 import io.vertx.ext.web.RoutingContext
 
 open class BaseService {
@@ -30,6 +31,8 @@ open class BaseService {
         const val CLIENT_EXPIRED = "client expired."
         const val CLIENT_LOCKED = "client locked."
         const val TOKEN_EXPIRED = "token expired."
+        const val SELF_IP6 = "0:0:0:0:0:0:0:1"
+        const val SELF_IP4 = "127.0.0.1"
     }
 
     private val logService: LogService = LogService.INSTANCE
@@ -158,15 +161,34 @@ open class BaseService {
         val id = ApiServer.idBuilder.nextId()
         val ip = ctx.request().remoteAddress().host()
         val path = ctx.request().path()
-        val method = ctx.request().method().name
+        val method = methodNumber(ctx.request().method())
         val params = SU.json(ctx.request().params())
         val body = ctx.bodyAsString
         val user = if (ApiServer.server.authorize) {
             val code = ctx.request().getHeader(AUTHORIZATION)
             cachedToken[code]
         } else null
-        val log = RequestLog(id,ip,path,method,params,body,user,status,SU.date(),SU.now())
+        val ips = if (ip == SELF_IP6) SU.ipToLong(SELF_IP4) else SU.ipToLong(ip)
+        val log = RequestLog(id,ips,path,method,params,body,user,status,SU.now())
         logService.saveRequestLog(log)
+    }
+
+    /**
+     * 数据保存时请求方式采用数字形式保存
+     * get 1
+     * post 2
+     * put 3
+     * delete 4
+     * 其它不被允许，记作0
+     */
+    private fun methodNumber(method: HttpMethod) : Int {
+        return when (method) {
+            HttpMethod.GET -> 1
+            HttpMethod.POST -> 2
+            HttpMethod.PUT -> 3
+            HttpMethod.DELETE -> 4
+            else -> 0
+        }
     }
 
 }

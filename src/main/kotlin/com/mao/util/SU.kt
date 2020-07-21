@@ -10,7 +10,9 @@ import java.time.LocalDate
  */
 object SU {
 
+    //随机字符串使用
     private const val RANDOM: String = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
+    //密文替换规则
     private val TD: MutableMap<Char,CharArray> = hashMapOf(
         Pair('0', charArrayOf('+','Z','A')),
         Pair('1', charArrayOf('=','Y','9')),
@@ -125,6 +127,28 @@ object SU {
         val res: MutableMap<String, String> = HashMap()
         map.forEach { res[it.key] = it.value }
         return jacksonObjectMapper().writeValueAsString(res)
+    }
+
+    /**
+     * ip转数字
+     * 字符串必须是正确的ip
+     * long = [1] * 2^24 + [2] * 2^16 + [3] * 2^8 + [4]
+     * long = [1] << 24  + [2] << 16  + [3] << 8  + [4]
+     */
+    fun ipToLong(ip: String) : Long {
+        val split = ip.split(".")
+        return split[0].toLong().shl(24) + split[1].toLong().shl(16) + split[2].toLong().shl(8) + split[3].toLong()
+    }
+
+    /**
+     * 数字转ip
+     * ip = (s >> 24) & 0xff  .  (s >> 16) & 0xff  .  (s >> 8) & 0xff  .  s & 0xff
+     * 或
+     * ip = s >>> 24  .  (s & 0x00ffffff) >>> 16  .  (s & 0x0000ffff) >>> 8  .  s & 0x000000ff
+     */
+    fun longToIp(s: Long) : String {
+        //return "${s ushr 24}.${(s and 0x00FFFFFF) ushr 16}.${(s and 0x0000FFFF) ushr 8}.${s and 0x000000FF}"
+        return "${(s shr 24) and 0xff}.${(s shr 16) and 0xff}.${(s shr 8) and 0xff}.${s and 0xff}"
     }
 
 }
