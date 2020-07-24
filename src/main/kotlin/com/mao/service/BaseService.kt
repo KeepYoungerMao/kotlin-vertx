@@ -92,7 +92,7 @@ open class BaseService {
     /**
      * 成功返回
      */
-    fun ok(ctx: RoutingContext, data: Any) {
+    fun ok(ctx: RoutingContext, data: Any?) {
         end(ctx,ResEnum.OK,data)
     }
 
@@ -141,7 +141,7 @@ open class BaseService {
     /**
      * 统一返回方法，可在此执行统一的其他逻辑
      */
-    private fun end(ctx: RoutingContext, resEnum: ResEnum, data: Any) {
+    private fun end(ctx: RoutingContext, resEnum: ResEnum, data: Any?) {
         log(ctx,resEnum.code)
         ctx.response().end(json(data,resEnum))
     }

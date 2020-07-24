@@ -8,6 +8,7 @@ import com.mao.service.auth.AuthService
 import com.mao.init.DataCache
 import com.mao.service.data.DataService
 import com.mao.entity.data.DataTable
+import com.mao.service.data.TableService
 import com.mao.util.Reader
 import com.mao.util.SnowFlake
 import io.vertx.core.AbstractVerticle
@@ -21,7 +22,7 @@ class ApiServer : AbstractVerticle() {
     companion object {
         val server: Server = Reader.readServer("/config/server.properties")
         val authClient: MutableList<AuthClient> = Reader.readClient("/config/client.json")
-        val jdbcClient: JDBCClient = JDBCClient.createShared(Vertx.vertx(), Reader.readJDBC("/config/jdbc.properties"))
+        val jdbcClient: JDBCClient = JDBCClient.createShared(Vertx.vertx(),Reader.readJDBC("/config/jdbc.properties"))
         val dataTable: MutableList<DataTable> = ArrayList()
         val idBuilder: SnowFlake = SnowFlake(server.dataCenter, server.machine)
     }
@@ -34,6 +35,7 @@ class ApiServer : AbstractVerticle() {
         if (server.authorize)
             router.route("/oauth/:type").handler(AuthService.create())
         router.route("/api/data/:data/:type").handler(BodyHandler.create()).handler(DataService.create())
+        router.route("/api/table").handler(BodyHandler.create()).handler(TableService.create())
         errorAdvise(router)
         vertx.createHttpServer().requestHandler(router).listen(server.port)
     }
